@@ -1,0 +1,8 @@
+p {
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  /* text-indent: 2em; se quiser manter a indentação */
+  text-align: justify; /* se estiver usando justificado */
+}
+
+

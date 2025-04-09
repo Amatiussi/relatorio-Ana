@@ -1,0 +1,927 @@
+---
+title: "Relatório de Análise no R"
+subtitle: "Ana Matiussi"
+format:
+  html:
+    output-dir: docs
+    theme: cosmo
+    page-layout: article
+    toc: true
+    code-link: true
+    number-sections: true
+    css: justify.css
+    grid:
+      sidebar-width: 250px
+      body-width: 800px
+      margin-width: 250px
+      gutter-width: 1.5em
+editor: visual
+---
+
+Os dados utilizados estão disponíveis no repositório [Github](https://github.com/Amatiussi/relatorio-Ana.git), facilitando o acesso e a reprodução dos códigos.
+
+::: {.callout-warning appearance="minimal"}
+Algumas saídas foram ocultadas para melhor visualização.
+:::
+
+# Visão geral
+
+Este relatório tem como finalidade apresentar as análises realizadas no R, com objetivo de investigar os efeitos da incorporação de **diferentes matrizes de parentesco** (pedigree, genômica e combinada) sobre as estimativas de parâmetros genéticos, obtidas por meio de **modelos mistos** aplicados a dados de cana-de-açúcar. A abordagem visa comparar o desempenho das matrizes A, G e H em termos de precisão e consistência das estimativas.
+
+# Pacotes
+
+```{r include=T, results="hide", warning=F, message=F}
+lapply(c("AGHmatrix", "sommer", "dplyr", "ggplot2", "reshape2", "rBayesianOptimization", "knitr", "kableExtra", "gridExtra"), library, character.only = TRUE)
+```
+
+# Construção e manipulação de matrizes de parentesco
+
+## Dados de Genealogia
+
+```{r include=T, warning=F, message=F}
+# Dados
+dat_gen <- read.table("genealogia-sugarcane.csv", header=TRUE, sep=";")
+head(dat_gen); tail(dat_gen)  # primeiras e últimas n linhas
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+dat_gen <- transform(dat_gen, id=factor(id), mom=factor(mom), dad=factor(dad))
+str(dat_gen) # estrutura check 
+```
+
+### Matriz A
+
+Foram realizados **testes com diferentes níveis de ploidia (8x, 10x, 12x)** para avaliar o comportamento das matrizes de parentesco. Na matriz de parentesco A, observou-se um leve aumento nos autovalores conforme a ploidia aumentava, enquanto, na matriz G, os valores se mantiveram estáveis independentemente da ploidia utilizada. Como a **ploidia exata da população analisada é desconhecida**, optou-se por um valor intermediário (10x), que, além de refletir o comportamento geral das matrizes, é biologicamente plausível: o genoma das variedades comerciais é majoritariamente derivado de *Saccharum officinarum* `(2n = 8x = 80)` e apresenta número cromossômico variando entre `(2n = 100–130)`, devido à hibridização com outras espécies e à ocorrência de aneuploidias. Isso reforça a escolha de uma ploidia intermediária, como 10x, para representar adequadamente essa complexidade nas análises de parentesco [(Oliveira et al., 2023)](https://doi.org/10.1111/aab.12855).
+
+```{r include=T, results="hide", warning=F, message=F}
+# Calcular a Matriz A (dados completos)
+matriz_A1 <- Amatrix(dat_gen, ploidy=10, verify=TRUE)    # ploidy = XX: Define a ploidia da espécie
+```
+
+```{r include=T, warning=F, message=F}
+# Verificar os primeiros elementos da matriz A
+matriz_A1[1:5, 1:5]    # submatriz 5x5
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Verificar a dimensão
+dim(matriz_A1)         # 1112 x 1112 - ok
+```
+
+A matriz de parentesco A foi inicialmente calculada com base na genealogia completa, **totalizando 1.112 genótipos**. No entanto, considerando que apenas 80 desses genótipos possuem dados de campo, foi realizada uma filtragem da matriz, resultando em uma **submatriz de dimensão 80 x 80**.
+
+### Filtro da matriz A
+
+```{r include=T, results="hide", warning=F, message=F}
+# Lista dos 80 genotipos (RB e SP)
+genotipos <- read.table("genotipos.txt", header=FALSE, sep="\t", stringsAsFactors = FALSE)
+colnames(genotipos)=c("G", "id")  
+head(genotipos); tail(genotipos)
+
+# Selecionar os IDs 
+ids <- genotipos$id; ids
+
+# Filtrar a matriz A1 para os 80 indivíduos
+matriz_A2 <- matriz_A1[ids, ids]
+```
+
+```{r include=T, warning=F, message=F}
+matriz_A2[1:5, 1:5] 
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+dim(matriz_A2)    # 80 x 80 - ok
+```
+
+### Comparação entre matrizes A
+
+```{r include=T, warning=F, message=F}
+# Estatísticas descritivas 
+summary(as.vector(matriz_A1))  # dados completos 
+summary(as.vector(matriz_A2))  # dados filtrados  
+
+# Boxplots
+df1 <- data.frame(Parentesco = as.vector(matriz_A1), Matriz = "1112 x 1112")
+df2 <- data.frame(Parentesco = as.vector(matriz_A2), Matriz = "80 x 80")
+
+# Plot 1
+p1 <- ggplot(df1, aes(x = Matriz, y = Parentesco)) +
+  geom_boxplot(fill = "lightblue") +
+  ggtitle("Matriz completa") +
+  theme_gray() 
+
+# Plot 2
+p2 <- ggplot(df2, aes(x = Matriz, y = Parentesco)) +
+  geom_boxplot(fill = "lightgreen") +
+  ggtitle("Matriz filtrada") +
+  theme_gray() 
+
+grid.arrange(p1, p2, ncol = 2) 
+```
+
+Ao filtrar a matriz para os 80 genótipos, observa-se uma mudança na distribuição dos valores de parentesco. A matriz completa apresentou média de parentesco igual a 0,0713 e mediana de 0,0311, enquanto a matriz filtrada apresentou valores mais elevados, com média de 0,0994 e mediana de 0,0391. O valor máximo, por outro lado, foi reduzido na matriz filtrada (1,16), em comparação com a matriz completa (2,42). Isso ocorre porque a matriz completa inclui todos os genótipos disponíveis, abrangendo indivíduos que podem ser geneticamente muito próximos (parentescos extremos), os quais não foram incluídos nessa seleção filtrada.
+
+### Identificação de pares com alto grau de Parentesco
+
+```{r include=T, warning=F, message=F}
+# Os 10 maiores valores de parentesco (para matriz completa e filtrada) 
+
+analisar_parentesco <- function(matriz) {
+  
+  # Converter para formato longo
+  dados <- melt(as.matrix(matriz), varnames = c("ID1", "ID2"), value.name = "Parentesco")
+  
+  # Remover autoparentesco e duplicatas
+  dados <- dados[dados$ID1 != dados$ID2, ]  # Remove diagonal
+  dados <- dados[!duplicated(t(apply(dados[, 1:2], 1, sort))), ]  # Remove pares duplicados
+  
+  # Ordenar do maior para menor parentesco
+  dados[order(-dados$Parentesco), ]
+}
+
+# Análise da matriz completa
+top_A1 <- analisar_parentesco(matriz_A1)
+head(top_A1, 10)
+
+# Análise da matriz filtrada
+top_A2 <- analisar_parentesco(matriz_A2)
+head(top_A2, 10)
+
+```
+
+A redução do valor máximo de parentesco na matriz filtrada é explicada pela ausência de pares altamente relacionados entre os 80 genótipos com dados de campo. Na matriz completa, os pares com maior grau de parentesco incluíam indivíduos como **CP11-65**, **CP670** e **CP-1165**, com valores superiores a 1,9, indicando relações extremamente próximas, possivelmente clones ou irmãos completos. Já na matriz filtrada, os maiores valores de parentesco variaram entre 0,59 e 0,67, envolvendo genótipos como **RB855206**, **RB855156**, **RB966928** e **RB72454**. Esses valores indicam relações de parentesco moderadas, como meio-irmãos ou ancestrais em comum mais distantes. Vale ressaltar que os valores máximos obtidos nas estatísticas descritivas gerais incluem os autoparentescos (diagonal da matriz), que podem apresentar valores superiores a 1. Ao considerar apenas os **pares de indivíduos distintos**, os maiores valores de parentesco observados foram 1,97 na matriz completa e 0,67 na matriz filtrada.
+
+## Dados de Marcadores SSR
+
+```{r include=T, results="hide", warning=F, message=F}
+# Dados
+dat_ssr <- read.table("marcadores_ssr.txt", heade=TRUE, row.names=1)
+head(dat_ssr); tail(dat_ssr)  
+dim(dat_ssr)  # 80 x 1483   
+
+# Number of Individuals: 80  
+# Number of Markers: 1483
+```
+
+### Matriz G
+
+A função `Gmatrix()` do pacote **AGHmatrix** inclui o argumento `ploidy.correction`, que define como o denominador da matriz de parentesco genômico (G) é calculado no método de VanRaden para espécies poliplóides (ploidia \> 2). Quando definido como `TRUE`, o cálculo utiliza uma abordagem paramétrica baseada no nível de ploidia e nas frequências alélicas dos marcadores, conforme descrito por VanRaden (2008) e Endelman et al. (2018). Por outro lado, quando definido como `FALSE`, o denominador é baseado na variância amostral de cada marcador, refletindo a variabilidade observada nos dados. Essa escolha influencia diretamente a escala e a interpretação da matriz G, sendo importante para análises com espécies que possuem diferentes níveis de ploidia.
+
+Embora os marcadores SSR não forneçam **informações de dosagem alélica** e o conjunto de dados seja limitado (n = 80), optou-se pela correção paramétrica `(ploidy.correction = TRUE)` para evitar a subestimação da variância genética nos modelos mistos. Essa abordagem preservou a hierarquia esperada entre as matrizes (H \> G \> A), enquanto a opção padrão `(FALSE)` resultou em valores incoerentes (G \< A), possivelmente devido à baixa precisão da estimativa da variância amostral em amostras pequenas.
+
+```{r include=T, results="hide", warning=F, message=F}
+# Calcular a matriz G usando o método de VanRaden 
+matriz_G <- Gmatrix(as.matrix(dat_ssr), method="VanRaden", ploidy=10, ploidy.correction=TRUE) 
+
+class(matriz_G)  # "matrix" - ok 
+dim(matriz_G)    # 80 x 80 - ok 
+
+matriz_G[1:5, 1:5]  
+```
+
+Toda matriz de parentesco (A, G, H) é simétrica e positiva semidefinida:
+
+-   `Matriz Simétrica =` Uma matriz é simétrica quando ela é igual à sua transposta. Isso significa que o parentesco entre dois indivíduos $i$ e $j$ é o mesmo que o parentesco entre $j$ e $i$.
+
+-   `Matriz Positiva Semidefinida =` Uma matriz é positiva semidefinida se todos os seus autovalores são não negativos (ou seja, maiores ou iguais a zero).
+
+### Verificação das matrizes
+
+```{r include=T, warning=F, message=F}
+# Verificar se a matriz A e G é positiva semidefinida e simétrica: 
+
+# Extrair os autovalores 
+valores_A2 <- eigen(matriz_A2)$values; round(valores_A2, 6) 
+valores_G <- eigen(matriz_G)$values; round(valores_G, 6)   # último valor da diagonal (= 0) 
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Conta quantos autovalores negativos existem (se tiver)  
+sum(valores_A2 < 0)   
+sum(valores_G < 0)    
+
+# Verificar se a matriz é simétrica  
+isSymmetric(matriz_A2)
+isSymmetric(matriz_G)   
+```
+
+**Problema de Singularidade na Matriz G em Poliploides**
+
+Em espécies poliploides, a matriz **G** pode tornar-se **singular**, ou seja, não invertível. Isso pode resultar em:
+
+-   `Singularidade:` Devido à alta colinearidade entre indivíduos ou marcadores, a matriz G pode se tornar singular, o que aumenta a chance de autovalores próximos de zero, impedindo sua inversão.
+
+-   `Simetria:` A matriz G deve ser simétrica (G = G^T^), mas erros numéricos podem comprometer essa propriedade, especialmente em dados de alta dimensionalidade.
+
+Uma solução eficaz é adicionar uma pequena constante ($λ$) à diagonal da matriz G, técnica conhecida como regularização (ou Ridge regression). Isso garante que G seja:
+
+-   `Invertível:` $λ$ torna todos os autovalores positivos (\> 0), evitando singularidade.
+
+-   `Simétrica:` Como $λ$ é adicionado apenas à diagonal, a estrutura da matriz é preservada.
+
+Matematicamente:
+
+$G^* = G + λI$
+
+Onde:
+
+-   **G^\*^** é a matriz regularizada;
+
+-   **G** é a matriz de parentesco original;
+
+-   $λ$ é o parâmetro de regularização;
+
+-   **I** é a matriz identidade.
+
+#### **Regularização**
+
+```{r include=T, warning=F, message=F}
+# Adicionar uma constante à diagonal de G 
+constante <- 1e-6  
+matriz_G2 <- matriz_G + diag(constante, nrow(matriz_G))  
+```
+
+A constante adicionada à diagonal evita que a matriz G seja singular, garantindo que todos os autovalores sejam positivos.
+
+```{r include=T, warning=F, message=F}
+# autovalores  
+valores_G2 <- eigen(matriz_G2)$values; round(valores_G2, 6) 
+# último valor da diagonal (> 0) - ok
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+dim(matriz_G2)           # 80 x 80 - ok  
+isSymmetric(matriz_G2)   # é simétrica - ok
+
+# Matriz A e G ok - matematicamente as matrizes estão corretas e podem ser usadas!
+```
+
+### Comparação visual das matrizes
+
+```{r include=T, results="hide", warning=F, message=F}
+# Converter as matrizes em formato longo para visualização
+matriz_A_long <- melt(matriz_A2)
+matriz_G_long <- melt(matriz_G2)
+
+# Adicionar uma coluna para identificar a matriz de origem
+matriz_A_long$Matriz <- "A"
+matriz_G_long$Matriz <- "G"
+
+# Combinar as duas matrizes em um único data.frame
+matriz_combinada <- rbind(matriz_A_long, matriz_G_long)
+```
+
+```{r include=T, warning=F, message=F}
+# Plotar as matrizes lado a lado (comparação) 
+ggplot(matriz_combinada, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  facet_wrap(~ Matriz) +
+  scale_fill_gradient(low = "white", high = "blue") +
+  labs(title = "Comparação entre Matrizes A e G", x = "Indivíduos", y = "Indivíduos", fill = "Parentesco") 
+```
+
+A **comparação entre as matrizes de parentesco** A (pedigree) e G (genômica) revela diferenças na magnitude dos valores de parentesco. A matriz A apresenta cores mais intensas tanto na diagonal quanto fora dela, indicando valores mais elevados e uma estrutura genealógica bem definida. Em contraste, a matriz G exibe tonalidades mais claras em toda sua extensão, o que reflete valores de parentesco geralmente mais baixos. Essa redução na intensidade pode estar associada à limitação dos marcadores SSR utilizados, que, por sua natureza e densidade reduzida, capturam menos variação genômica compartilhada entre os indivíduos. Ainda assim, a preservação da diagonal indica consistência nas autorrelações, e a estrutura geral, embora atenuada, mantém certa semelhança com a matriz A.
+
+```{r include=T, results="hide", warning=F, message=F}
+# Calcular a diferença entre as matrizes
+(diferenca_AG <- matriz_A2 - matriz_G2)
+diferenca_df <- melt(diferenca_AG)
+```
+
+```{r include=T, warning=F, message=F}
+## Visualizar a matriz de diferenças com heatmap
+ggplot(diferenca_df, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, limits = c(min(diferenca_df$value), max(diferenca_df$value)), name = "A - G") +
+  labs(title = "Diferenças entre Matrizes de Parentesco (Pedigree - Genômica)", x = "Indivíduos", y = "Indivíduos") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 6), axis.text.y = element_text(size = 6), legend.position = "right")
+
+```
+
+O **gráfico de diferenças (A - G)** evidencia que os valores derivados do pedigree (A) são consistentemente superiores aos da matriz genômica (G), com predomínio de tons vermelhos ao longo da matriz. Essa diferença é mais pronunciada na diagonal e entre indivíduos com algum grau de parentesco, refletindo a tendência da matriz A em atribuir valores mais altos, enquanto a matriz G, construída a partir de marcadores SSR, resulta em estimativas mais conservadoras. Isso sugere que a matriz genômica está capturando uma proporção menor da variabilidade genética esperada, o que pode estar relacionado à natureza dos dados moleculares utilizados. Mesmo assim, os padrões de agrupamento presentes nas diferenças indicam que ambas as matrizes compartilham informações estruturais sobre as relações entre os indivíduos.
+
+## Matriz H para cada combinação de $\tau$ e $\omega$
+
+Como alternativa à validação cruzada proposta por [Amadeu et al. (2023)](https://doi.org/10.1093/bioinformatics/btad445) para avaliar o impacto dos pesos na capacidade preditiva, consideraram-se duas estratégias diferentes:
+
+-   `Grid Search (busca exaustiva):` testa todas as combinações possíveis de $\tau$ e $\omega$ dentro de uma grade predefinida; e
+
+-   `Otimização Bayesiana (processo iterativo):` explora o espaço de parâmetros de forma mais inteligente, priorizando regiões mais promissoras.
+
+Para o cálculo da matriz H nos dois procedimentos, foi necessário calcular a média dos valores fenotípicos entre cortes para cada genótipo, uma vez que a análise requer um único valor por indivíduo, sem repetições.
+
+### Dados fenotípicos
+
+```{r include=T, results="hide", warning=F, message=F}
+# Carregar os dados fenotípicos 
+dat_fen=read.table("fenotipo.csv", header=TRUE, sep=";"); head(dat_fen); tail(dat_fen)
+dat_fen$tph <- as.numeric(gsub(",", ".", dat_fen$tph))  
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Calcular a média por genótipo
+pheno_means <- aggregate(tph ~ geno, data = dat_fen, FUN = mean, na.rm = TRUE)
+pheno_data <- pheno_means$tph           # Extrair os valores médios
+names(pheno_data) <- pheno_means$geno   # Nomear os valores com os genótipos
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Criar um data.frame 
+pheno_df <- data.frame(
+  geno = names(pheno_data),   
+  Y = pheno_data               
+)
+head(pheno_df); tail(pheno_df)
+```
+
+```{r include=T, warning=F, message=F}
+# Alterar o nome dos genótipos
+pheno_df <- pheno_df %>%
+  left_join(genotipos, by = c("geno" = "G")) %>%
+  mutate(geno = id) %>%
+  select(-id)
+
+head(pheno_df); tail(pheno_df)
+```
+
+Segundo [Martini et al. (2018)](https://doi.org/10.1186/s12711-018-0386-x), é preciso avaliar cada combinação de $\tau$ e $\omega$ em termos de:
+
+-   `Capacidade Preditiva:` Correlação entre fenótipos observados e valores preditos;
+
+-   `Inflação:` Inclinação da regressão dos fenótipos observados em relação aos valores preditos;
+
+-   `Erro Quadrático Médio (MSE):` usada para avaliar a qualidade de um modelo de predição (um modelo com menor MSE é considerado melhor, pois tem erros menores nas predições).
+
+Definição geral dos parâmetros na Matriz H: A matriz no método Martini et al. (2018) combina as seguintes informações:
+
+${H}_{22}=(\tau G^{-1}+(1-\omega){A}_{22}^{-1})^{-1}$
+
+Em que:
+
+-   $\tau$: Controla o peso da matriz genômica (G)
+
+-   $\omega$: Controla o peso da matriz de pedigree (A)
+
+Os parâmetros são usados para melhorar a convergência e reduzir inflação nas predições.
+
+### Grid Search (Método 1)
+
+```{r include=T, warning=F, message=F}
+# Definir a grade de parâmetros
+tau_values <- seq(0.1, 2.0, by = 0.1)      # tau de 0.1 a 2.0, com incrementos de 0.1
+omega_values <- seq(-1.0, 1.0, by = 0.1)   # omega de -1.0 a 1.0, com incrementos de 0.1
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Lista para armazenar as matrizes H
+H_matrizes <- list()
+
+# Criar uma lista para armazenar os resultados
+results <- data.frame()
+
+# Iterar sobre as combinações de tau e omega
+for (tau in tau_values) {
+  for (omega in omega_values) {
+    
+    # Calcular a matriz H com os parâmetros tau e omega
+    H <- Hmatrix(A = matriz_A2, G = matriz_G2, tau = tau, omega = omega, method = "Martini")
+    
+    # Forçar simetria na matriz H
+    H_sym <- (H + t(H)) / 2    
+    # o método "Martini" pode introduzir assimetrias se as matrizes A e G não estiverem perfeitamente alinhadas
+    
+    # Armazenar a matriz H na lista
+    H_matrizes[[paste("tau", tau, "omega", omega, sep = "_")]] <- H_sym   
+    
+    # length(H_matrizes) # 420 combinações de tau e omega - ok 
+    
+    # Ajustar o modelo misto usando a matriz H
+    model <- mmer(Y ~ 1, random = ~ vsr(geno, Gu = H_sym), rcov = ~ units, data = pheno_df)
+    #summary(model)
+    
+    # Obter os valores preditos
+    predicted_values <- predict(model, D = "geno")$pval
+    blups <- predicted_values$predicted.value
+    
+    # Calcular a capacidade preditiva (correlação entre observado e predito)
+    predictive_ability <- cor(pheno_df$Y, blups[match(pheno_df$geno, predicted_values$geno)])
+    
+    # Calcular a inflação (coeficiente de regressão)
+    inflation <- coef(lm(pheno_df$Y ~ blups[match(pheno_df$geno, predicted_values$geno)]))[2]
+    
+    # Calcular o Erro Quadrático Médio (MSE) para cada combinação de tau e omega
+    mse <- mean((pheno_df$Y - blups[match(pheno_df$geno, predicted_values$geno)])^2)
+    
+    # Armazenar os resultados
+    results <- rbind(results, data.frame(
+      tau = tau,
+      omega = omega,
+      predictive_ability = predictive_ability,
+      inflation = inflation,
+      mse = mse,  
+      row.names = NULL   # remove os nomes das linhas
+    ))
+  }
+}
+```
+
+```{r include=T, warning=F, message=F}
+head(results); tail(results)
+```
+
+```{r include=T, warning=F, message=F}
+# Adicionar uma coluna "is_best" para indicar as melhores combinações
+
+# Definir um limite para considerar uma combinação como "melhor"
+threshold_predictive_ability <- 0.95 * max(results$predictive_ability)  # 95% da capacidade preditiva máxima
+threshold_inflation <- 1.1  # Inflação máxima de 1.1
+```
+
+```{r include=T, warning=F, message=F}
+# Criar a coluna "is_best"
+results$is_best <- results$predictive_ability >= threshold_predictive_ability & results$inflation <= threshold_inflation
+head(results); tail(results)
+```
+
+```{r include=T, warning=F, message=F}
+# Filtrar apenas as combinações onde is_best é TRUE
+best_combinations <- subset(results, is_best == TRUE)
+head(best_combinations); tail(best_combinations)
+```
+
+```{r include=T, warning=F, message=F}
+# Selecionar a combinação com a maior capacidade preditiva
+(best_combination <- best_combinations[which.max(best_combinations$predictive_ability), ])
+```
+
+**Fim da análise Grid Search!** Agora que temos a melhor combinação de parâmetros, podemos calcular a matriz H com a inclusão dos pesos (parâmetros).
+
+```{r include=T, results="hide", warning=F, message=F}
+# Calcular a matriz H 
+matriz_H=Hmatrix(matriz_A2, matriz_G2, tau=1.8, omega=-0.3, method="Martini") %>% 
+  {(. + t(.))/2}  # Simetrização
+```
+
+```{r include=T, warning=F, message=F}
+# Autovalores
+valores_H <- eigen(matriz_H)$values; round(valores_H, 6)
+```
+
+```{r include=T, warning=F, message=F}
+# Verificar se a matriz é simétrica
+isSymmetric(matriz_H)
+```
+
+### Otimização bayesiana (Método 2)
+
+```{r include=T, results="hide", warning=F, message=F}
+# Criar uma lista para armazenar os resultados
+results_bayes <- data.frame()
+
+# Função objetivo para otimização bayesiana
+objective_function <- function(tau, omega) {
+  
+  # Calcular a matriz H com os parâmetros tau e omega
+  H <- Hmatrix(A = matriz_A2, G = matriz_G2, tau = tau, omega = omega, method = "Martini")
+  
+  # Forçar simetria na matriz H
+  H_sym <- (H + t(H)) / 2
+  
+  # Ajustar o modelo misto usando a matriz H_sym
+  model <- mmer(Y ~ 1, random = ~ vsr(geno, Gu = H_sym), rcov = ~ units, data = pheno_df)
+  
+  # Obter os valores preditos
+  predicted_values <- predict(model, D = "geno")$pval
+  blups <- predicted_values$predicted.value
+  
+  # Calcular a capacidade preditiva (correlação entre observado e predito)
+  predictive_ability <- cor(pheno_df$Y, blups[match(pheno_df$geno, predicted_values$geno)])
+  
+  # Calcular a inflação (coeficiente de regressão)
+  inflation <- coef(lm(pheno_df$Y ~ blups[match(pheno_df$geno, predicted_values$geno)]))[2]
+  
+  # Calcular o Erro Quadrático Médio (MSE)
+  mse <- mean((pheno_df$Y - blups[match(pheno_df$geno, predicted_values$geno)])^2)
+  
+  # Armazenar os resultados na tabela
+  results_bayes <<- rbind(results_bayes, data.frame(
+    tau = tau,
+    omega = omega,
+    predictive_ability = predictive_ability,
+    inflation = inflation,
+    mse = mse
+  ))
+  
+  # Retornar a capacidade preditiva como métrica a ser maximizada
+  return(list(Score = predictive_ability, Pred = inflation))
+}
+
+# Definir os limites para tau e omega
+bounds <- list(tau = c(0.1, 2.0),         # tau entre 0.1 e 2.0
+               omega = c(-1.0, 1.0))      # omega entre -1.0 e 1.0
+
+# Executar a otimização bayesiana
+set.seed(123)                # Definir semente para reprodutibilidade
+bayes_opt <- BayesianOptimization(
+  FUN = objective_function,  # Função objetivo
+  bounds = bounds,           # Limites dos parâmetros
+  init_points = 10,          # Número de pontos iniciais aleatórios para explorar o espaço de busca
+  n_iter = 20,               # Número de iterações após os pontos iniciais
+  acq = "ucb",               # Função de aquisição (Upper Confidence Bound)
+  kappa = 2.576,             # Parâmetro de exploração (default) - Valores maiores exploram mais
+  verbose = TRUE             # Mostrar progresso
+)
+
+# Resultados da otimização
+bayes_opt
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Extrair o histórico de iterações
+history_bayes <- bayes_opt$History
+
+# Tabela de resultados
+results_bayes_rounded <- results_bayes %>%
+    mutate(
+      tau = round(tau, 1),
+      omega = round(omega, 1))
+
+```
+
+```{r include=T, warning=F, message=F}
+rownames(results_bayes_rounded) <- NULL; results_bayes_rounded
+```
+
+```{r include=T, warning=F, message=F}
+# Extrair os melhores parâmetros
+(best_tau <- round(bayes_opt$Best_Par["tau"], 1))
+(best_omega <- round(bayes_opt$Best_Par["omega"], 1))
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Extrair a capacidade preditiva e a inflação
+(best_predictive_ability <- bayes_opt$Best_Value)
+(best_inflation <- bayes_opt$Pred)
+```
+
+**Fim da análise da Otimização bayesiana!** Agora que temos a melhor combinação de parâmetros, podemos calcular a matriz H.
+
+```{r include=T, results="hide", warning=F, message=F}
+# Calcular a matriz H com os melhores parâmetros
+matriz_H2 <- Hmatrix(matriz_A2, matriz_G2, tau = best_tau, omega = best_omega, method = "Martini") %>% 
+                       {(. + t(.))/2}  # Simetrização
+```
+
+```{r include=T, warning=F, message=F}
+# Autovalores
+valores_H2 <- eigen(matriz_H2)$values; round(valores_H2, 6)
+```
+
+```{r include=T, warning=F, message=F}
+# Verificar se a matriz é simétrica
+isSymmetric(matriz_H2)
+```
+
+### Comparação de resultados das duas abordagens
+
+```{r include=T, warning=F, message=F}
+# Melhores resultados do Grid Search
+(best_grid_search <- results[which.max(results$predictive_ability), ])     # tau = 1.8; omega = -0.3
+```
+
+```{r include=T, warning=F, message=F}
+# Melhores resultados da Otimização Bayesiana
+(best_bayes_opt <- results_bayes_rounded[which.max(history_bayes$Value), ]) # tau = 0.9; omega = 0.4
+```
+
+De acordo com [Martini et al. (2018)](https://doi.org/10.1186/s12711-018-0386-x), diferentes combinações de parâmetros podem levar a desempenhos preditivos semelhantes. Os autores observaram que múltiplas configurações podem apresentar desempenhos estatísticos equivalentes. Os resultados das duas abordagens avaliadas confirmam essa observação: diferentes combinações produzem resultados similares.
+
+No **Grid Search**, das 420 combinações avaliadas, 72 combinações distintas que atenderam aos critérios de melhor ajuste (is_best == TRUE). Já na **Otimização Bayesiana**, também foram encontradas várias combinações com desempenho semelhantes, totalizando 30 combinações diferentes. Essa diferença quantitativa reflete a **natureza dos métodos**: enquanto o Grid Search realiza uma varredura exaustiva no espaço de parâmetros, a Otimização Bayesiana adota uma estratégia mais eficiente, concentrando-se em regiões mais promissoras.
+
+**Mas qual abordagem é melhor?**
+
+A interpretação dos parâmetros ($\tau$) e ($\omega$) nas duas combinações encontradas revela estratégias distintas de ponderação entre as informações genômicas e de pedigree, como é observado na tabela abaixo:
+
+|  |  |  |
+|-----------------------|-------------------------|-------------------------|
+| **Método** | **Grid Search** | **Otimização Bayesiana** |
+| Combinação | $\tau$ = 1,8; $\omega$ = -0,3 | $\tau$ = 0,9; $\omega$ = 0,4 |
+| Desempenho Preditivo | 0.9991887 | 0.9991883 |
+| Complexidade | Alta (valores extremos, $\omega$ negativo) | Moderada (equilíbrio entre genômica e pedigree) |
+| Risco | Potencial de overfitting devido a $\tau$ elevado e $\omega$ negativo | Menor risco, parâmetros mais conservadores |
+
+**Ambas as abordagens mantêm a predominância da matriz genômica sobre a de pedigree**, mas com diferenças significativas na ponderação. A solução obtida via **Grid Search** apresenta valores mais extremos, com peso elevado para a informação genômica e um valor negativo para o parâmetro de pedigree. Nesse caso, o valor negativo de $\omega$ amplia a contribuição do pedigree (A~22~) em 30% (1 - $\omega$ = 1 - (-0,3) = 1 + 0,3 = 1,3) na construção da matriz H~22~, atuando como fator de balanceamento para evitar superestimativas. Embora essa configuração seja matematicamente válida e possa ajudar a reduzir a inflação nas predições, conforme demonstrado por [Martini et al. (2018)](https://doi.org/10.1186/s12711-018-0386-x), ela também introduz maior complexidade ao modelo e aumenta o risco de *overfitting*, especialmente em situações onde há maior incerteza nos dados genômicos.
+
+Por outro lado, a solução obtida através da **Otimização Bayesiana** oferece um equilíbrio mais conservador entre as fontes de informação. O valor de $\tau$ próximo a 1 mantém a matriz genômica em sua escala original, enquanto $\omega$ = 0,4 resulta em uma redução moderada de 40% da contribuição do pedigree, equivalente a 60% do peso original (1 - $\omega$ = 1 - 0,4 = 0,6). Essa configuração mostra-se mais estável e menos suscetível a problemas de superajuste.
+
+Considerando o princípio da parcimônia, o equilíbrio entre as fontes de informação e o uso de valores moderados, a combinação obtida pela **Otimização Bayesiana** se mostra como a escolha mais adequada para este caso, reduzindo riscos de superajuste e alinhando-se melhor às implementações do método single-step.
+
+# Estimativas e Modelos Mistos
+
+## Abordagem Single-Step
+
+Nesta etapa, foi realizada uma análise conjunta dos diferentes cortes por meio de modelos mistos, incorporando as matrizes de parentesco (A, G, H). Foram testadas diferentes estruturas de variância-covariância para os efeitos genéticos (id, A, G, H) e para os efeitos residuais (id, diag, un), permitindo avaliar simultaneamente a influência da estrutura genética e da heterogeneidade residual nas estimativas de variância.
+
+```{r include=T, warning=F, message=F}
+# Dados
+map <- setNames(genotipos$id, genotipos$G)  # Cria um vetor de "mapeamento" 
+dat_fen$geno <- map[dat_fen$geno]
+
+head(dat_fen); tail(dat_fen)
+
+dat_fen=transform(dat_fen, corte=factor(corte), geno=factor(geno), bloco=factor(bloco))
+```
+
+**Modelo base:** $y_{ijk} = \mu + g_i + b_j + c_k + gb_{ij} + gc_{ik} + e_{ijk}$
+
+```{r include=T, results="hide", warning=F, message=F}
+modelo_base <- mmer(tph ~ geno + bloco + corte, random = ~ geno:bloco + geno:corte, rcov = ~ vsr(units), data = dat_fen)
+```
+
+```{r include=T, warning=F, message=F}
+summary(modelo_base)$varcomp
+```
+
+Após ajustar o modelo base, foi substituído o efeito aleatório simples de **Geno** pelas matrizes de parentesco (**A**, **G** e **H**). Além disso, testaram-se diferentes estruturas VCOV para **Corte** e **Geno:**
+
+-   Efeito de genótipos modelado pela matriz A -\> **random = \~ vsr(Geno, Gu = A)**
+
+-   Efeito de genótipos modelado pela matriz G -\> **random = \~ vsr(Geno, Gu = G)**
+
+-   Efeito de genótipos modelado pela matriz H -\> **random = \~ vsr(Geno, Gu = H)**
+
+```{r include=T, results="hide", warning=F, message=F}
+A <- matriz_A2    # 80x80
+G <- matriz_G2    # 80x80     
+H <- matriz_H2    # 80x80  -> matriz H do método Otimização Bayesiana
+```
+
+### Teste de modelos e estruturas VCOV
+
+```{r include=T, results="hide", warning=F, message=F}
+# G = id, R = id  (genótipos com variâncias iguais; resíduos com variâncias iguais)
+mm1 <- mmer(tph ~ bloco + corte, random = ~ vsr(isc(geno)) + geno:bloco + geno:corte, rcov = ~ vsr(units), data = dat_fen)
+
+# G = A, R = id  (genótipos modelados pela matriz A; resíduos com variâncias iguais)
+mm2 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = A) + geno:bloco + geno:corte, rcov = ~ vsr(units), data = dat_fen)
+
+# G = G, R = id  (genótipos modelados pela matriz G; resíduos com variâncias iguais)
+mm3 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = G) + geno:bloco + geno:corte, rcov = ~ vsr(units), data = dat_fen)
+
+# G = H, R = id  (genótipos modelados pela matriz H; resíduos com variâncias iguais)
+mm4 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = H) + geno:bloco + geno:corte, rcov = ~ vsr(units), data = dat_fen)
+
+# G = id, R = diag  (genótipos com variâncias iguais; resíduos com variâncias diferentes)
+mm5 <- mmer(tph ~ bloco + corte, random = ~ vsr(isc(geno)) + geno:bloco + geno:corte, rcov = ~ vsr(dsr(corte), units), data = dat_fen)
+
+# G = A, R = diag  (genótipos modelados pela matriz A; resíduos com variâncias diferentes)
+mm6 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = A) + geno:bloco + geno:corte, rcov = ~ vsr(dsr(corte), units), data = dat_fen)
+
+# G = G, R = diag  (genótipos modelados pela matriz G; resíduos com variâncias diferentes)
+mm7 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = G) + geno:bloco + geno:corte, rcov = ~ vsr(dsr(corte), units), data = dat_fen)
+
+# G = H, R = diag  (genótipos modelados pela matriz H; resíduos com variâncias diferentes)
+mm8 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = H) + geno:bloco + geno:corte, rcov = ~ vsr(dsr(corte), units), data = dat_fen)
+
+# G = id, R = un  (genótipos com variâncias iguais; resíduos com variâncias e covariâncias diferentes)
+mm9 <- mmer(tph ~ bloco + corte, random = ~ vsr(isc(geno)) + geno:bloco + geno:corte, rcov = ~ vsr(usr(corte), units), data = dat_fen)
+
+# G = A, R = un  (genótipos modelados pela matriz A; resíduos com variâncias e covariâncias diferentes)
+mm10 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = A) + geno:bloco + geno:corte, rcov = ~ vsr(usr(corte), units), data = dat_fen)
+
+# G = G, R = un  (genótipos modelados pela matriz G; resíduos com variâncias e covariâncias diferentes)
+mm11 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = G) + geno:bloco + geno:corte, rcov = ~ vsr(usr(corte), units), data = dat_fen)
+
+# G = H, R = un  (genótipos modelados pela matriz H; resíduos com variâncias e covariâncias diferentes)
+mm12 <- mmer(tph ~ bloco + corte, random = ~ vsr(geno, Gu = H) + geno:bloco + geno:corte, rcov = ~ vsr(usr(corte), units), data = dat_fen)
+
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Variâncias Genéticas -> (u:geno.tph-tph)
+summary(mm1)$varcomp     # G = id ; R = id
+summary(mm2)$varcomp     # G = A  ; R = id 
+summary(mm3)$varcomp     # G = G  ; R = id 
+summary(mm4)$varcomp     # G = H  ; R = id
+summary(mm5)$varcomp     # G = id ; R = diag
+summary(mm6)$varcomp     # G = A  ; R = diag 
+summary(mm7)$varcomp     # G = G  ; R = diag 
+summary(mm8)$varcomp     # G = H  ; R = diag 
+summary(mm9)$varcomp     # G = id ; R = un
+summary(mm10)$varcomp    # G = A  ; R = un
+summary(mm11)$varcomp    # G = G  ; R = un
+summary(mm12)$varcomp    # G = H  ; R = un
+```
+
+Os resultados demonstraram que a matriz híbrida (H) proporcionou um **aumento significativo na estimativa da variância genética** em comparação com as matrizes A e G, **independentemente da estrutura de variância residual adotada**. Isso indica que a integração de informações de pedigree com dados moleculares (SSR) permite capturar uma parcela maior da variabilidade genética. Em contraste, a matriz de pedigree (A) isoladamente apresentou a menor capacidade de explicação da variação genética entre os genótipos avaliados.
+
+::: {.callout-important appearance="minimal"}
+Os valores entre parênteses correspondem ao erro padrão (VarCompSE).
+:::
+
+**Para R = id**
+
+| Fonte de Variação | G=A          | G=G            | G=H             |
+|-------------------|--------------|----------------|-----------------|
+| Genótipo          | 41.97 (8.64) | 101.79 (21.08) | 121.101 (25.00) |
+| Genótipo:Bloco    | 9.19 (2.14)  | 8.98 (2.12)    | 8.97 (2.12)     |
+| Genótipo:Corte    | 9.23 (2.16)  | 8.97 (2.14)    | 8.95 (2.14)     |
+| Resíduo           | 36.44 (2.38) | 36.51 (2.39)   | 36.52 (2.39)    |
+
+Quando considerada uma estrutura residual homogênea, observou-se que a matriz H proporcionou a maior estimativa de variância genética entre os genótipos (121.10), seguida pela matriz G (101.79) e, por último, pela matriz A (41.98). Esses resultados indicam que a matriz H, ao integrar informações de pedigree e marcadores moleculares, permite capturar uma porção mais ampla da variabilidade genética. A variância residual permaneceu praticamente constante entre os modelos (\~36.5), o que reforça que as diferenças observadas nas variâncias genéticas são atribuídas à matriz de parentesco utilizada.
+
+**Para R = Diag**
+
+| Fonte de Variação | G=A          | G=G           | G=H            |
+|-------------------|--------------|---------------|----------------|
+| Genótipo          | 37.46 (7.84) | 90.69 (19.10) | 107.99 (22.67) |
+| Genótipo:Bloco    | 7.55 (1.96)  | 7.35 (1.94)   | 7.34 (1.94)    |
+| Genótipo:Corte    | 9.36 (2.18)  | 9.06 (2.15)   | 9.05 (2.15)    |
+| Resíduo-Corte1    | 47.43 (4.84) | 47.47 (4.83)  | 47.45 (4.83)   |
+| Resíduo-Corte2    | 43.65 (4.48) | 43.87 (4.49)  | 43.87 (4.49)   |
+| Resíduo-Corte3    | 22.95 (2.84) | 23.00 (2.84)  | 23.02 (2.84)   |
+
+Ao permitir heterogeneidade entre os cortes, os modelos continuaram apresentando o mesmo padrão quanto à variância genética: H (107.99) \> G (90.70) \> A (37.47). A modelagem da estrutura residual com variâncias específicas por corte não alterou significativamente o comportamento dos componentes genéticos, mas permitiu observar variações residuais entre os cortes, com valores maiores nos dois primeiros cortes (\~47 e \~44) e menores no terceiro (\~23). Isso sugere que os dois primeiros cortes apresentaram maior variabilidade não explicada, possivelmente associada a condições ambientais menos estáveis ou a menor precisão nas medições iniciais.
+
+**Para R = un**
+
+| Fonte de Variação     | G=A           | G=G           | G=H           |
+|-----------------------|---------------|---------------|---------------|
+| Genótipo              | 37.46 (7.84)  | 90.69 (1.91)  | 107.99 (2.26) |
+| Genótipo:Bloco        | 7.55 (1.96)   | 7.35 (1.94)   | 7.34 (1.94)   |
+| Genótipo:Corte        | 9.36 (2.18)   | 9.06 (2.15)   | 9.05 (2.15)   |
+| Resíduo-Corte1        | 47.43 (4.84)  | 47.47 (4.83)  | 47.45 (4.83)  |
+| Covariância-Corte 2:1 | 21.09 (1.88)  | 21.98 (7.04)  | 22.22 (1.19)  |
+| Resíduo-Corte2        | 43.65 (4.48)  | 43.87 (4.49)  | 43.87 (4.49)  |
+| Covariância-Corte 3:1 | 21.09 (00.00) | 21.98 (00.00) | 22.22 (00.00) |
+| Covariância-Corte 3:2 | 21.09 (00.00) | 21.98 (00.00) | 22.22 (00.00) |
+| Resíduo-Corte3        | 22.95 (2.84)  | 23.00 (2.84)  | 23.02 (2.84)  |
+
+Com a introdução de uma estrutura residual não estruturada, que considera não apenas variâncias diferentes entre os cortes, mas também suas covariâncias, o padrão de variância genética permaneceu consistente: H (107.99) \> G (90.70) \> A (37.47). As estimativas de covariância entre os cortes foram iguais (\~22), com erro padrão igual a zero. Isso sugere que essas covariâncias podem não ser estatisticamente significativas, ou que o modelo não conseguiu estimar a incerteza dessas covariâncias. A matriz H seguiu destacando-se por capturar maior proporção da variabilidade genética, mesmo com o aumento da complexidade no componente residual. Isso evidencia que a matriz híbrida é informativa mesmo em cenários mais realistas e complexos de modelagem.
+
+### Tabela de comparação de modelos
+
+```{r include=T, warning=F, message=F}
+# Lista de modelos ajustados
+modelos <- list(mm1, mm2, mm3, mm4, mm5, mm6, mm7, mm8, mm9, mm10, mm11, mm12)
+
+# Nomes dos modelos (estruturas VCOVs e Matrizes)
+nomes_modelos <- c(
+  "R=id, G=id", "R=id, G=A", "R=id, G=G", "R=id, G=H",
+  "R=diag, G=id", "R=diag, G=A", "R=diag, G=G", "R=diag, G=H",
+  "R=un, G=id", "R=un, G=A", "R=un, G=G", "R=un, G=H")
+```
+
+```{r include=T, warning=F, message=F}
+# Extrair AIC e BIC de cada modelo
+AIC_values <- sapply(modelos, function(x) x$AIC)  
+BIC_values <- sapply(modelos, function(x) x$BIC)  
+
+# Criar a tabela de comparação
+comparison <- data.frame(
+  Modelo = nomes_modelos,
+  AIC = AIC_values,
+  BIC = BIC_values)
+```
+
+```{r include=T, warning=F, message=F}
+# Criar a tabela simples com kable
+(tabela <- kable(comparison, align = "c", caption = "Comparação de Modelos (AIC e BIC)"))   # small is better
+
+```
+
+```{r include=T, warning=F, message=F}
+# R=diag, G=A   equivalentes com   R=un, G=A 
+# R=diag, G=G   equivalentes com   R=un, G=G  
+# R=diag, G=H   equivalentes com   R=un, G=H
+```
+
+Com base nos critérios de informação AIC e BIC, os modelos que utilizam a matriz H para o efeito genético e a estrutura diagonal (diag) para os resíduos apresentaram o melhor ajuste aos dados. Observa-se que os modelos com R = diag são equivalentes aos respectivos modelos com R = un, sugerindo que o uso de uma estrutura mais simples para os resíduos (diag) é suficiente para capturar a variabilidade, sem perda de qualidade no ajuste.
+
+Seguindo o princípio da parcimônia, opta-se por modelos com **R = diag**, que são mais simples e computacionalmente eficientes. A matriz H destacou-se como a mais informativa para modelar os efeitos genéticos, reforçando a vantagem da combinação entre pedigree e marcadores moleculares.
+
+## Abordagem Two-Step
+
+Nesta etapa, a análise foi conduzida em dois passos. No **primeiro passo**, cada corte (ano) foi analisado separadamente por meio de um modelo com efeitos fixos para blocos e genótipos. O objetivo dessa etapa foi remover o efeito de blocos e obter médias ajustadas (BLUEs) mais precisas para os genótipos dentro de cada corte, ou seja, médias "limpas" sem resíduo experimental. No **segundo passo**, essas médias ajustadas foram reunidas em uma análise conjunta, com o objetivo de modelar a variação genética entre os genótipos ao longo dos cortes. Para isso, foram utilizadas diferentes matrizes de parentesco (A, G e H), além da inclusão do efeito de corte como fator fixo.
+
+::: {.callout-note appearance="minimal"}
+Como cada genótipo tem apenas **uma média por corte**, **não há repetições** para a estimativa de uma nova variância residual no segundo passo. Na prática, o componente residual que o modelo misto tentaria estimar já foi, em grande parte, absorvido no primeiro passo da análise.
+:::
+
+**Solução:** fixar a matriz de variância residual (R) no segundo passo, utilizando os valores de variância residual estimados individualmente para cada corte no primeiro passo. Essa estratégia visa preservar a heterogeneidade residual entre os cortes, mesmo sem repetições por genótipo.
+
+```{r include=T, results="hide", warning=F, message=F}
+# Filtro cortes
+c1 = subset(dat_fen, corte == 1); c1
+c2 = subset(dat_fen, corte == 2); c2
+c3 = subset(dat_fen, corte == 3); c3
+```
+
+**Modelo:** $y_{ij} = \mu + g_i + b_j + e_{ij}$
+
+```{r include=T, results="hide", warning=F, message=F}
+# Modelo para cada corte (g e b como efeitos fixos)
+mm_c1 <- mmer(tph ~ bloco + geno, rcov = ~ vsr(units), data = c1)
+mm_c2 <- mmer(tph ~ bloco + geno, rcov = ~ vsr(units), data = c2)
+mm_c3 <- mmer(tph ~ bloco + geno, rcov = ~ vsr(units), data = c3)
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Variâncias residuais (u:units.tph-tph)
+summary(mm_c1)$varcomp       # 51.59916
+summary(mm_c2)$varcomp       # 51.93876
+summary(mm_c3)$varcomp       # 28.48849
+```
+
+```{r include=T, warning=F, message=F}
+# Extrair os coeficientes 
+coef_c1 <- summary(mm_c1)$betas
+coef_c2 <- summary(mm_c2)$betas  # Mostra Estimate, Std.Error e t.value
+coef_c3 <- summary(mm_c3)$betas
+```
+
+```{r include=T, warning=F, message=F}
+# Extrair apenas as linhas dos genótipos (ignorando intercepto e blocos)
+n_fixos <- 1 + (length(levels(dat_fen$bloco)) - 1)  # 1 intercepto + (n_blocos - 1)
+
+# Médias ajustadas dos genótipos
+med1 <- mm_c1$Beta$Estimate[(n_fixos + 1):length(mm_c1$Beta$Estimate)]
+med2 <- mm_c2$Beta$Estimate[(n_fixos + 1):length(mm_c2$Beta$Estimate)]
+med3 <- mm_c3$Beta$Estimate[(n_fixos + 1):length(mm_c3$Beta$Estimate)]
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Obter os níveis dos genótipos
+nomes_geno <- levels(dat_fen$geno)
+
+# Criar o data.frame
+Blue1 <- data.frame(geno = nomes_geno, tph = mm_c1$Beta$Estimate[1:length(nomes_geno)])   # Corte 1
+Blue2 <- data.frame(geno = nomes_geno, tph = mm_c2$Beta$Estimate[1:length(nomes_geno)])   # Corte 2
+Blue3 <- data.frame(geno = nomes_geno, tph = mm_c3$Beta$Estimate[1:length(nomes_geno)])   # Corte 3
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Combinar todas as médias ajustadas
+Blues <- rbind(
+  cbind(Blue1, corte = "1"),
+  cbind(Blue2, corte = "2"),
+  cbind(Blue3, corte = "3"))
+
+nrow(Blues)  # 80 genótipos × 3 cortes = 240 linhas
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Extrair variâncias residuais de cada corte 
+var_resid_c1 <- summary(mm_c1)$varcomp["u:units.tph-tph", "VarComp"]
+var_resid_c2 <- summary(mm_c2)$varcomp["u:units.tph-tph", "VarComp"]
+var_resid_c3 <- summary(mm_c3)$varcomp["u:units.tph-tph", "VarComp"]
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+# Garantir que corte seja fator
+Blues$corte <- as.factor(Blues$corte)
+
+# Adicionar variâncias residuais ao data.frame Blues
+Blues$residual_var <- ifelse(
+  Blues$corte == "1", var_resid_c1,
+  ifelse(Blues$corte == "2", var_resid_c2, var_resid_c3)
+)
+
+# Número de observações por corte
+table(Blues$corte)
+
+# Cria uma matriz diagonal onde cada elemento é a variância residual do respectivo corte
+R_matrix <- diag(Blues$residual_var)
+
+dim(R_matrix)  
+```
+
+```{r include=T, results="hide", warning=F, message=F}
+
+# Assume uma única variância residual para todas as observações
+# mmA1 <- mmer(tph ~ corte, random = ~ vsr(geno, Gu = A), rcov = ?, data = Blues)
+# mmG1 <- mmer(tph ~ corte, random = ~ vsr(geno, Gu = G), rcov = ?, data = Blues)
+# mmH1 <- mmer(tph ~ corte, random = ~ vsr(geno, Gu = H), rcov = ?, data = Blues)
+
+# summary(mmA1)$varcomp
+# summary(mmG1)$varcomp  
+# summary(mmH1)$varcomp
+```
+
+Apesar de **diversas tentativas** utilizando todas as estratégias disponíveis no pacote `sommer`, não foi possível fixar diretamente a matriz R com variâncias residuais previamente estimadas. Foram testadas diferentes abordagens, incluindo a especificação de estruturas e argumentos por meio do parâmetro `rcov`, mas nenhuma resultou na execução bem-sucedida do modelo. Essa limitação parece estar relacionada à própria implementação do `sommer`, que, até o momento, **não oferece suporte para a fixação** da matriz R com valores definidos pelo usuário, pelo menos não na forma que seria necessária para este tipo de análise Two-Step.
+
+::: {.callout-caution appearance="minimal"}
+**Possível solução:** ASReml-R
+:::
+
+# Referências
+
+AMADEU, Rodrigo R. et al. AGHmatrix: genetic relationship matrices in R. **Bioinformatics**, v. 39, n. 7, p. btad445, 2023.
+
+ENDELMAN, Jeffrey B. et al. Genetic variance partitioning and genome-wide prediction with allele dosage information in autotetraploid potato. **Genetics**, v. 209, n. 1, p. 77-87, 2018.
+
+MARTINI, Johannes WR et al. The effect of the H^-1^ scaling factors τ and ω on the structure of H in the single-step procedure. **Genetics Selection Evolution**, v. 50, n. 1, p. 16, 2018.
+
+OLIVEIRA, Gleicy Kelly et al. Meiotic abnormalities in sugarcane (Saccharum spp.) and parental species: evidence for peri‐and paracentric inversions. **Annals of applied biology**, v. 183, n. 3, p. 271-286, 2023.
+
+VANRADEN, Paul M. Efficient methods to compute genomic predictions. **Journal of dairy science**, v. 91, n. 11, p. 4414-4423, 2008.

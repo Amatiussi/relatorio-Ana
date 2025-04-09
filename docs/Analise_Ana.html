@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Relatório de Análise no R</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+<script src="Analise_Ana_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Analise_Ana_files/libs/quarto-html/quarto.js"></script>
+<script src="Analise_Ana_files/libs/quarto-html/popper.min.js"></script>
+<script src="Analise_Ana_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Analise_Ana_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Analise_Ana_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Analise_Ana_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Analise_Ana_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Analise_Ana_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Analise_Ana_files/libs/bootstrap/bootstrap-32162a2fca7cb0439643f2faaab1edf3.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light"><script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script><script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script><link rel="stylesheet" href="justify.css">
+</head>
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active"><h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+<li><a href="#vis%C3%A3o-geral" id="toc-visão-geral" class="nav-link active" data-scroll-target="#vis%C3%A3o-geral"><span class="header-section-number">1</span> Visão geral</a></li>
+  <li><a href="#pacotes" id="toc-pacotes" class="nav-link" data-scroll-target="#pacotes"><span class="header-section-number">2</span> Pacotes</a></li>
+  <li>
+<a href="#constru%C3%A7%C3%A3o-e-manipula%C3%A7%C3%A3o-de-matrizes-de-parentesco" id="toc-construção-e-manipulação-de-matrizes-de-parentesco" class="nav-link" data-scroll-target="#constru%C3%A7%C3%A3o-e-manipula%C3%A7%C3%A3o-de-matrizes-de-parentesco"><span class="header-section-number">3</span> Construção e manipulação de matrizes de parentesco</a>
+  <ul class="collapse">
+<li>
+<a href="#dados-de-genealogia" id="toc-dados-de-genealogia" class="nav-link" data-scroll-target="#dados-de-genealogia"><span class="header-section-number">3.1</span> Dados de Genealogia</a>
+  <ul class="collapse">
+<li><a href="#matriz-a" id="toc-matriz-a" class="nav-link" data-scroll-target="#matriz-a"><span class="header-section-number">3.1.1</span> Matriz A</a></li>
+  <li><a href="#filtro-da-matriz-a" id="toc-filtro-da-matriz-a" class="nav-link" data-scroll-target="#filtro-da-matriz-a"><span class="header-section-number">3.1.2</span> Filtro da matriz A</a></li>
+  <li><a href="#compara%C3%A7%C3%A3o-entre-matrizes-a" id="toc-comparação-entre-matrizes-a" class="nav-link" data-scroll-target="#compara%C3%A7%C3%A3o-entre-matrizes-a"><span class="header-section-number">3.1.3</span> Comparação entre matrizes A</a></li>
+  <li><a href="#identifica%C3%A7%C3%A3o-de-pares-com-alto-grau-de-parentesco" id="toc-identificação-de-pares-com-alto-grau-de-parentesco" class="nav-link" data-scroll-target="#identifica%C3%A7%C3%A3o-de-pares-com-alto-grau-de-parentesco"><span class="header-section-number">3.1.4</span> Identificação de pares com alto grau de Parentesco</a></li>
+  </ul>
+</li>
+  <li>
+<a href="#dados-de-marcadores-ssr" id="toc-dados-de-marcadores-ssr" class="nav-link" data-scroll-target="#dados-de-marcadores-ssr"><span class="header-section-number">3.2</span> Dados de Marcadores SSR</a>
+  <ul class="collapse">
+<li><a href="#matriz-g" id="toc-matriz-g" class="nav-link" data-scroll-target="#matriz-g"><span class="header-section-number">3.2.1</span> Matriz G</a></li>
+  <li><a href="#verifica%C3%A7%C3%A3o-das-matrizes" id="toc-verificação-das-matrizes" class="nav-link" data-scroll-target="#verifica%C3%A7%C3%A3o-das-matrizes"><span class="header-section-number">3.2.2</span> Verificação das matrizes</a></li>
+  <li><a href="#compara%C3%A7%C3%A3o-visual-das-matrizes" id="toc-comparação-visual-das-matrizes" class="nav-link" data-scroll-target="#compara%C3%A7%C3%A3o-visual-das-matrizes"><span class="header-section-number">3.2.3</span> Comparação visual das matrizes</a></li>
+  </ul>
+</li>
+  <li>
+<a href="#matriz-h-para-cada-combina%C3%A7%C3%A3o-de-tau-e-omega" id="toc-matriz-h-para-cada-combinação-de-tau-e-omega" class="nav-link" data-scroll-target="#matriz-h-para-cada-combina%C3%A7%C3%A3o-de-tau-e-omega"><span class="header-section-number">3.3</span> Matriz H para cada combinação de <span class="math inline">\(\tau\)</span> e <span class="math inline">\(\omega\)</span></a>
+  <ul class="collapse">
+<li><a href="#dados-fenot%C3%ADpicos" id="toc-dados-fenotípicos" class="nav-link" data-scroll-target="#dados-fenot%C3%ADpicos"><span class="header-section-number">3.3.1</span> Dados fenotípicos</a></li>
+  <li><a href="#grid-search-m%C3%A9todo-1" id="toc-grid-search-método-1" class="nav-link" data-scroll-target="#grid-search-m%C3%A9todo-1"><span class="header-section-number">3.3.2</span> Grid Search (Método 1)</a></li>
+  <li><a href="#otimiza%C3%A7%C3%A3o-bayesiana-m%C3%A9todo-2" id="toc-otimização-bayesiana-método-2" class="nav-link" data-scroll-target="#otimiza%C3%A7%C3%A3o-bayesiana-m%C3%A9todo-2"><span class="header-section-number">3.3.3</span> Otimização bayesiana (Método 2)</a></li>
+  <li><a href="#compara%C3%A7%C3%A3o-de-resultados-das-duas-abordagens" id="toc-comparação-de-resultados-das-duas-abordagens" class="nav-link" data-scroll-target="#compara%C3%A7%C3%A3o-de-resultados-das-duas-abordagens"><span class="header-section-number">3.3.4</span> Comparação de resultados das duas abordagens</a></li>
+  </ul>
+</li>
+  </ul>
+</li>
+  <li>
+<a href="#estimativas-e-modelos-mistos" id="toc-estimativas-e-modelos-mistos" class="nav-link" data-scroll-target="#estimativas-e-modelos-mistos"><span class="header-section-number">4</span> Estimativas e Modelos Mistos</a>
+  <ul class="collapse">
+<li>
+<a href="#abordagem-single-step" id="toc-abordagem-single-step" class="nav-link" data-scroll-target="#abordagem-single-step"><span class="header-section-number">4.1</span> Abordagem Single-Step</a>
+  <ul class="collapse">
+<li><a href="#teste-de-modelos-e-estruturas-vcov" id="toc-teste-de-modelos-e-estruturas-vcov" class="nav-link" data-scroll-target="#teste-de-modelos-e-estruturas-vcov"><span class="header-section-number">4.1.1</span> Teste de modelos e estruturas VCOV</a></li>
+  <li><a href="#tabela-de-compara%C3%A7%C3%A3o-de-modelos" id="toc-tabela-de-comparação-de-modelos" class="nav-link" data-scroll-target="#tabela-de-compara%C3%A7%C3%A3o-de-modelos"><span class="header-section-number">4.1.2</span> Tabela de comparação de modelos</a></li>
+  </ul>
+</li>
+  <li><a href="#abordagem-two-step" id="toc-abordagem-two-step" class="nav-link" data-scroll-target="#abordagem-two-step"><span class="header-section-number">4.2</span> Abordagem Two-Step</a></li>
+  </ul>
+</li>
+  <li><a href="#refer%C3%AAncias" id="toc-referências" class="nav-link" data-scroll-target="#refer%C3%AAncias"><span class="header-section-number">5</span> Referências</a></li>
+  </ul></nav>
+</div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><div class="quarto-title">
+<h1 class="title">Relatório de Análise no R</h1>
+<p class="subtitle lead">Ana Matiussi</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header><p>Os dados utilizados estão disponíveis no repositório <a href="https://github.com/Amatiussi/relatorio-Ana.git">Github</a>, facilitando o acesso e a reprodução dos códigos.</p>
+<div class="callout callout-style-simple callout-warning no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Algumas saídas foram ocultadas para melhor visualização.</p>
+</div>
+</div>
+</div>
+<section id="visão-geral" class="level1" data-number="1"><h1 data-number="1">
+<span class="header-section-number">1</span> Visão geral</h1>
+<p>Este relatório tem como finalidade apresentar as análises realizadas no R, com objetivo de investigar os efeitos da incorporação de <strong>diferentes matrizes de parentesco</strong> (pedigree, genômica e combinada) sobre as estimativas de parâmetros genéticos, obtidas por meio de <strong>modelos mistos</strong> aplicados a dados de cana-de-açúcar. A abordagem visa comparar o desempenho das matrizes A, G e H em termos de precisão e consistência das estimativas.</p>
+</section><section id="pacotes" class="level1" data-number="2"><h1 data-number="2">
+<span class="header-section-number">2</span> Pacotes</h1>
+<div class="cell">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"AGHmatrix"</span>, <span class="st">"sommer"</span>, <span class="st">"dplyr"</span>, <span class="st">"ggplot2"</span>, <span class="st">"reshape2"</span>, <span class="st">"rBayesianOptimization"</span>, <span class="st">"knitr"</span>, <span class="st">"kableExtra"</span>, <span class="st">"gridExtra"</span><span class="op">)</span>, <span class="va">library</span>, character.only <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section><section id="construção-e-manipulação-de-matrizes-de-parentesco" class="level1" data-number="3"><h1 data-number="3">
+<span class="header-section-number">3</span> Construção e manipulação de matrizes de parentesco</h1>
+<section id="dados-de-genealogia" class="level2" data-number="3.1"><h2 data-number="3.1" class="anchored" data-anchor-id="dados-de-genealogia">
+<span class="header-section-number">3.1</span> Dados de Genealogia</h2>
+<div class="cell">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Dados</span></span>
+<span><span class="va">dat_gen</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.table</a></span><span class="op">(</span><span class="st">"genealogia-sugarcane.csv"</span>, header<span class="op">=</span><span class="cn">TRUE</span>, sep<span class="op">=</span><span class="st">";"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">dat_gen</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">dat_gen</span><span class="op">)</span>  <span class="co"># primeiras e últimas n linhas</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          id mom dad
+1 Amauritius   0   0
+2     Badila   0   0
+3  BandHitam   0   0
+4     Batjan   0   0
+5     BA6032   0   0
+6    BJ66210   0   0</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          id     mom     dad
+1107 RB91518  Co6806 RB72454
+1108 RB91520 RB72454  Co6806
+1109 RB91522  Co6806 RB72454
+1110 RB91523  Co6806 RB72454
+1111 RB91524  Co6806 RB72454
+1112 RB93531 RB72454  Co6806</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">dat_gen</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/transform.html">transform</a></span><span class="op">(</span><span class="va">dat_gen</span>, id<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span>, mom<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span><span class="op">(</span><span class="va">mom</span><span class="op">)</span>, dad<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span><span class="op">(</span><span class="va">dad</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html">str</a></span><span class="op">(</span><span class="va">dat_gen</span><span class="op">)</span> <span class="co"># estrutura check </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="matriz-a" class="level3" data-number="3.1.1"><h3 data-number="3.1.1" class="anchored" data-anchor-id="matriz-a">
+<span class="header-section-number">3.1.1</span> Matriz A</h3>
+<p>Foram realizados <strong>testes com diferentes níveis de ploidia (8x, 10x, 12x)</strong> para avaliar o comportamento das matrizes de parentesco. Na matriz de parentesco A, observou-se um leve aumento nos autovalores conforme a ploidia aumentava, enquanto, na matriz G, os valores se mantiveram estáveis independentemente da ploidia utilizada. Como a <strong>ploidia exata da população analisada é desconhecida</strong>, optou-se por um valor intermediário (10x), que, além de refletir o comportamento geral das matrizes, é biologicamente plausível: o genoma das variedades comerciais é majoritariamente derivado de <em>Saccharum officinarum</em> <code>(2n = 8x = 80)</code> e apresenta número cromossômico variando entre <code>(2n = 100–130)</code>, devido à hibridização com outras espécies e à ocorrência de aneuploidias. Isso reforça a escolha de uma ploidia intermediária, como 10x, para representar adequadamente essa complexidade nas análises de parentesco <a href="https://doi.org/10.1111/aab.12855">(Oliveira et al., 2023)</a>.</p>
+<div class="cell">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Calcular a Matriz A (dados completos)</span></span>
+<span><span class="va">matriz_A1</span> <span class="op">&lt;-</span> <span class="fu">Amatrix</span><span class="op">(</span><span class="va">dat_gen</span>, ploidy<span class="op">=</span><span class="fl">10</span>, verify<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>    <span class="co"># ploidy = XX: Define a ploidia da espécie</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Verificar os primeiros elementos da matriz A</span></span>
+<span><span class="va">matriz_A1</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>    <span class="co"># submatriz 5x5</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           Amauritius Badila BandHitam Batjan BA6032
+Amauritius          1      0         0      0      0
+Badila              0      1         0      0      0
+BandHitam           0      0         1      0      0
+Batjan              0      0         0      1      0
+BA6032              0      0         0      0      1</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Verificar a dimensão</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span><span class="op">(</span><span class="va">matriz_A1</span><span class="op">)</span>         <span class="co"># 1112 x 1112 - ok</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A matriz de parentesco A foi inicialmente calculada com base na genealogia completa, <strong>totalizando 1.112 genótipos</strong>. No entanto, considerando que apenas 80 desses genótipos possuem dados de campo, foi realizada uma filtragem da matriz, resultando em uma <strong>submatriz de dimensão 80 x 80</strong>.</p>
+</section><section id="filtro-da-matriz-a" class="level3" data-number="3.1.2"><h3 data-number="3.1.2" class="anchored" data-anchor-id="filtro-da-matriz-a">
+<span class="header-section-number">3.1.2</span> Filtro da matriz A</h3>
+<div class="cell">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Lista dos 80 genotipos (RB e SP)</span></span>
+<span><span class="va">genotipos</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.table</a></span><span class="op">(</span><span class="st">"genotipos.txt"</span>, header<span class="op">=</span><span class="cn">FALSE</span>, sep<span class="op">=</span><span class="st">"\t"</span>, stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">genotipos</span><span class="op">)</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"G"</span>, <span class="st">"id"</span><span class="op">)</span>  </span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">genotipos</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">genotipos</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Selecionar os IDs </span></span>
+<span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="va">genotipos</span><span class="op">$</span><span class="va">id</span>; <span class="va">ids</span></span>
+<span></span>
+<span><span class="co"># Filtrar a matriz A1 para os 80 indivíduos</span></span>
+<span><span class="va">matriz_A2</span> <span class="op">&lt;-</span> <span class="va">matriz_A1</span><span class="op">[</span><span class="va">ids</span>, <span class="va">ids</span><span class="op">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">matriz_A2</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            RB721012    RB72199    RB72454   RB725053    RB725828
+RB721012 1.000000000 0.05175781 0.02392578 0.06445312 0.005859375
+RB72199  0.051757813 1.00928069 0.05505371 0.06298828 0.023681641
+RB72454  0.023925781 0.05505371 1.06065379 0.07421875 0.037109375
+RB725053 0.064453125 0.06298828 0.07421875 1.00790895 0.038574219
+RB725828 0.005859375 0.02368164 0.03710938 0.03857422 1.001757545</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span><span class="op">(</span><span class="va">matriz_A2</span><span class="op">)</span>    <span class="co"># 80 x 80 - ok</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section><section id="comparação-entre-matrizes-a" class="level3" data-number="3.1.3"><h3 data-number="3.1.3" class="anchored" data-anchor-id="comparação-entre-matrizes-a">
+<span class="header-section-number">3.1.3</span> Comparação entre matrizes A</h3>
+<div class="cell">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Estatísticas descritivas </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html">as.vector</a></span><span class="op">(</span><span class="va">matriz_A1</span><span class="op">)</span><span class="op">)</span>  <span class="co"># dados completos </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.00000 0.00000 0.03105 0.07130 0.10156 2.41821 </code></pre>
+</div>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html">as.vector</a></span><span class="op">(</span><span class="va">matriz_A2</span><span class="op">)</span><span class="op">)</span>  <span class="co"># dados filtrados  </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.00000 0.01430 0.03910 0.09939 0.10695 1.16237 </code></pre>
+</div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Boxplots</span></span>
+<span><span class="va">df1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>Parentesco <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html">as.vector</a></span><span class="op">(</span><span class="va">matriz_A1</span><span class="op">)</span>, Matriz <span class="op">=</span> <span class="st">"1112 x 1112"</span><span class="op">)</span></span>
+<span><span class="va">df2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>Parentesco <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html">as.vector</a></span><span class="op">(</span><span class="va">matriz_A2</span><span class="op">)</span>, Matriz <span class="op">=</span> <span class="st">"80 x 80"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Plot 1</span></span>
+<span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu">ggplot</span><span class="op">(</span><span class="va">df1</span>, <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">Matriz</span>, y <span class="op">=</span> <span class="va">Parentesco</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_boxplot</span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"lightblue"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Matriz completa"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">theme_gray</span><span class="op">(</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="co"># Plot 2</span></span>
+<span><span class="va">p2</span> <span class="op">&lt;-</span> <span class="fu">ggplot</span><span class="op">(</span><span class="va">df2</span>, <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">Matriz</span>, y <span class="op">=</span> <span class="va">Parentesco</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_boxplot</span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"lightgreen"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Matriz filtrada"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">theme_gray</span><span class="op">(</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="fu">grid.arrange</span><span class="op">(</span><span class="va">p1</span>, <span class="va">p2</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure"><p><img src="Analise_Ana_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Ao filtrar a matriz para os 80 genótipos, observa-se uma mudança na distribuição dos valores de parentesco. A matriz completa apresentou média de parentesco igual a 0,0713 e mediana de 0,0311, enquanto a matriz filtrada apresentou valores mais elevados, com média de 0,0994 e mediana de 0,0391. O valor máximo, por outro lado, foi reduzido na matriz filtrada (1,16), em comparação com a matriz completa (2,42). Isso ocorre porque a matriz completa inclui todos os genótipos disponíveis, abrangendo indivíduos que podem ser geneticamente muito próximos (parentescos extremos), os quais não foram incluídos nessa seleção filtrada.</p>
+</section><section id="identificação-de-pares-com-alto-grau-de-parentesco" class="level3" data-number="3.1.4"><h3 data-number="3.1.4" class="anchored" data-anchor-id="identificação-de-pares-com-alto-grau-de-parentesco">
+<span class="header-section-number">3.1.4</span> Identificação de pares com alto grau de Parentesco</h3>
+<div class="cell">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Os 10 maiores valores de parentesco (para matriz completa e filtrada) </span></span>
+<span></span>
+<span><span class="va">analisar_parentesco</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">matriz</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  </span>
+<span>  <span class="co"># Converter para formato longo</span></span>
+<span>  <span class="va">dados</span> <span class="op">&lt;-</span> <span class="fu">melt</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">matriz</span><span class="op">)</span>, varnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"ID1"</span>, <span class="st">"ID2"</span><span class="op">)</span>, value.name <span class="op">=</span> <span class="st">"Parentesco"</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Remover autoparentesco e duplicatas</span></span>
+<span>  <span class="va">dados</span> <span class="op">&lt;-</span> <span class="va">dados</span><span class="op">[</span><span class="va">dados</span><span class="op">$</span><span class="va">ID1</span> <span class="op">!=</span> <span class="va">dados</span><span class="op">$</span><span class="va">ID2</span>, <span class="op">]</span>  <span class="co"># Remove diagonal</span></span>
+<span>  <span class="va">dados</span> <span class="op">&lt;-</span> <span class="va">dados</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html">duplicated</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span><span class="va">dados</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, <span class="fl">1</span>, <span class="va">sort</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, <span class="op">]</span>  <span class="co"># Remove pares duplicados</span></span>
+<span>  </span>
+<span>  <span class="co"># Ordenar do maior para menor parentesco</span></span>
+<span>  <span class="va">dados</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html">order</a></span><span class="op">(</span><span class="op">-</span><span class="va">dados</span><span class="op">$</span><span class="va">Parentesco</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Análise da matriz completa</span></span>
+<span><span class="va">top_A1</span> <span class="op">&lt;-</span> <span class="fu">analisar_parentesco</span><span class="op">(</span><span class="va">matriz_A1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">top_A1</span>, <span class="fl">10</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            ID1     ID2 Parentesco
+284930  CP11-65   CP670   1.972222
+285386  CP-1165   CP670   1.972222
+286498  CP-1165 CP11-65   1.972222
+286486  CP34-79 CP11-65   1.589506
+335452  NA63-83 CP43-74   1.565158
+283817    CP670  US1484   1.500000
+283818  CP11-65  US1484   1.500000
+284274  CP-1165  US1484   1.500000
+357275    Co326   Co229   1.500000
+286066 CP44-101 CP11-65   1.459105</code></pre>
+</div>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Análise da matriz filtrada</span></span>
+<span><span class="va">top_A2</span> <span class="op">&lt;-</span> <span class="fu">analisar_parentesco</span><span class="op">(</span><span class="va">matriz_A2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">top_A2</span>, <span class="fl">10</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          ID1      ID2 Parentesco
+2513 RB855206 RB855156  0.6710316
+2532 RB966928 RB855156  0.6337802
+192  RB855156  RB72454  0.6233762
+193  RB855206  RB72454  0.6233762
+2361 RB855563 RB855077  0.5961071
+2362 RB855589 RB855077  0.5961071
+2363 RB855595 RB855077  0.5961071
+3242 RB855589 RB855563  0.5961071
+3243 RB855595 RB855563  0.5961071
+3323 RB855595 RB855589  0.5961071</code></pre>
+</div>
+</div>
+<p>A redução do valor máximo de parentesco na matriz filtrada é explicada pela ausência de pares altamente relacionados entre os 80 genótipos com dados de campo. Na matriz completa, os pares com maior grau de parentesco incluíam indivíduos como <strong>CP11-65</strong>, <strong>CP670</strong> e <strong>CP-1165</strong>, com valores superiores a 1,9, indicando relações extremamente próximas, possivelmente clones ou irmãos completos. Já na matriz filtrada, os maiores valores de parentesco variaram entre 0,59 e 0,67, envolvendo genótipos como <strong>RB855206</strong>, <strong>RB855156</strong>, <strong>RB966928</strong> e <strong>RB72454</strong>. Esses valores indicam relações de parentesco moderadas, como meio-irmãos ou ancestrais em comum mais distantes. Vale ressaltar que os valores máximos obtidos nas estatísticas descritivas gerais incluem os autoparentescos (diagonal da matriz), que podem apresentar valores superiores a 1. Ao considerar apenas os <strong>pares de indivíduos distintos</strong>, os maiores valores de parentesco observados foram 1,97 na matriz completa e 0,67 na matriz filtrada.</p>
+</section></section><section id="dados-de-marcadores-ssr" class="level2" data-number="3.2"><h2 data-number="3.2" class="anchored" data-anchor-id="dados-de-marcadores-ssr">
+<span class="header-section-number">3.2</span> Dados de Marcadores SSR</h2>
+<div class="cell">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Dados</span></span>
+<span><span class="va">dat_ssr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.table</a></span><span class="op">(</span><span class="st">"marcadores_ssr.txt"</span>, heade<span class="op">=</span><span class="cn">TRUE</span>, row.names<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">dat_ssr</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">dat_ssr</span><span class="op">)</span>  </span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span><span class="op">(</span><span class="va">dat_ssr</span><span class="op">)</span>  <span class="co"># 80 x 1483   </span></span>
+<span></span>
+<span><span class="co"># Number of Individuals: 80  </span></span>
+<span><span class="co"># Number of Markers: 1483</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="matriz-g" class="level3" data-number="3.2.1"><h3 data-number="3.2.1" class="anchored" data-anchor-id="matriz-g">
+<span class="header-section-number">3.2.1</span> Matriz G</h3>
+<p>A função <code>Gmatrix()</code> do pacote <strong>AGHmatrix</strong> inclui o argumento <code>ploidy.correction</code>, que define como o denominador da matriz de parentesco genômico (G) é calculado no método de VanRaden para espécies poliplóides (ploidia &gt; 2). Quando definido como <code>TRUE</code>, o cálculo utiliza uma abordagem paramétrica baseada no nível de ploidia e nas frequências alélicas dos marcadores, conforme descrito por VanRaden (2008) e Endelman et al.&nbsp;(2018). Por outro lado, quando definido como <code>FALSE</code>, o denominador é baseado na variância amostral de cada marcador, refletindo a variabilidade observada nos dados. Essa escolha influencia diretamente a escala e a interpretação da matriz G, sendo importante para análises com espécies que possuem diferentes níveis de ploidia.</p>
+<p>Embora os marcadores SSR não forneçam <strong>informações de dosagem alélica</strong> e o conjunto de dados seja limitado (n = 80), optou-se pela correção paramétrica <code>(ploidy.correction = TRUE)</code> para evitar a subestimação da variância genética nos modelos mistos. Essa abordagem preservou a hierarquia esperada entre as matrizes (H &gt; G &gt; A), enquanto a opção padrão <code>(FALSE)</code> resultou em valores incoerentes (G &lt; A), possivelmente devido à baixa precisão da estimativa da variância amostral em amostras pequenas.</p>
+<div class="cell">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Calcular a matriz G usando o método de VanRaden </span></span>
+<span><span class="va">matriz_G</span> <span class="op">&lt;-</span> <span class="fu">Gmatrix</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span><span class="op">(</span><span class="va">dat_ssr</span><span class="op">)</span>, method<span class="op">=</span><span class="st">"VanRaden"</span>, ploidy<span class="op">=</span><span class="fl">10</span>, ploidy.correction<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/class.html">class</a></span><span class="op">(</span><span class="va">matriz_G</span><span class="op">)</span>  <span class="co"># "matrix" - ok </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span><span class="op">(</span><span class="va">matriz_G</span><span class="op">)</span>    <span class="co"># 80 x 80 - ok </span></span>
+<span></span>
+<span><span class="va">matriz_G</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Toda matriz de parentesco (A, G, H) é simétrica e positiva semidefinida:</p>
+<ul>
+<li><p><code>Matriz Simétrica =</code> Uma matriz é simétrica quando ela é igual à sua transposta. Isso significa que o parentesco entre dois indivíduos <span class="math inline">\(i\)</span> e <span class="math inline">\(j\)</span> é o mesmo que o parentesco entre <span class="math inline">\(j\)</span> e <span class="math inline">\(i\)</span>.</p></li>
+<li><p><code>Matriz Positiva Semidefinida =</code> Uma matriz é positiva semidefinida se todos os seus autovalores são não negativos (ou seja, maiores ou iguais a zero).</p></li>
+</ul></section><section id="verificação-das-matrizes" class="level3" data-number="3.2.2"><h3 data-number="3.2.2" class="anchored" data-anchor-id="verificação-das-matrizes">
+<span class="header-section-number">3.2.2</span> Verificação das matrizes</h3>
+<div class="cell">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Verificar se a matriz A e G é positiva semidefinida e simétrica: </span></span>
+<span></span>
+<span><span class="co"># Extrair os autovalores </span></span>
+<span><span class="va">valores_A2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html">eigen</a></span><span class="op">(</span><span class="va">matriz_A2</span><span class="op">)</span><span class="op">$</span><span class="va">values</span>; <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">valores_A2</span>, <span class="fl">6</span><span class="op">)</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 11.100146  4.428074  3.303540  3.091661  2.433944  1.875596  1.708188
+ [8]  1.615101  1.506869  1.417515  1.381759  1.280163  1.265445  1.219025
+[15]  1.154302  1.139229  1.079860  1.060840  1.038401  1.016734  1.003117
+[22]  1.000000  1.000000  1.000000  0.995183  0.992755  0.986135  0.969911
+[29]  0.954114  0.942601  0.929201  0.917679  0.910427  0.909210  0.900493
+[36]  0.849226  0.802995  0.785214  0.750000  0.749780  0.749780  0.749780
+[43]  0.749655  0.748387  0.748315  0.748315  0.748315  0.721001  0.666512
+[50]  0.641501  0.586212  0.580563  0.557766  0.515487  0.498792  0.498238
+[57]  0.498238  0.498238  0.498238  0.498238  0.498238  0.498095  0.497990
+[64]  0.497374  0.493320  0.493320  0.493320  0.492943  0.492943  0.492943
+[71]  0.482740  0.406113  0.404928  0.382034  0.332995  0.291874  0.265705
+[78]  0.200504  0.173173  0.077503</code></pre>
+</div>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">valores_G</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html">eigen</a></span><span class="op">(</span><span class="va">matriz_G</span><span class="op">)</span><span class="op">$</span><span class="va">values</span>; <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">valores_G</span>, <span class="fl">6</span><span class="op">)</span>   <span class="co"># último valor da diagonal (= 0) </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 2.773524 1.425255 1.311169 0.980833 0.769904 0.714314 0.654698 0.603491
+ [9] 0.547734 0.527674 0.509086 0.488385 0.478333 0.471055 0.451592 0.431403
+[17] 0.427384 0.417008 0.409005 0.398391 0.391492 0.383661 0.377426 0.370767
+[25] 0.355875 0.349069 0.344797 0.337010 0.332887 0.325658 0.323024 0.312399
+[33] 0.309521 0.307127 0.304552 0.297292 0.295759 0.291264 0.286259 0.282421
+[41] 0.277411 0.273610 0.269261 0.264047 0.261562 0.258321 0.255894 0.249515
+[49] 0.246083 0.244364 0.236308 0.233807 0.230764 0.225480 0.222137 0.216218
+[57] 0.213213 0.208240 0.201890 0.198662 0.195540 0.192957 0.190780 0.187176
+[65] 0.185041 0.182039 0.179030 0.173778 0.169267 0.167868 0.162011 0.157050
+[73] 0.152592 0.148584 0.146384 0.141205 0.139100 0.129673 0.122316 0.000000</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Conta quantos autovalores negativos existem (se tiver)  </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">valores_A2</span> <span class="op">&lt;</span> <span class="fl">0</span><span class="op">)</span>   </span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">valores_G</span> <span class="op">&lt;</span> <span class="fl">0</span><span class="op">)</span>    </span>
+<span></span>
+<span><span class="co"># Verificar se a matriz é simétrica  </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/isSymmetric.html">isSymmetric</a></span><span class="op">(</span><span class="va">matriz_A2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/isSymmetric.html">isSymmetric</a></span><span class="op">(</span><span class="va">matriz_G</span><span class="op">)</span>   </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Problema de Singularidade na Matriz G em Poliploides</strong></p>
+<p>Em espécies poliploides, a matriz <strong>G</strong> pode tornar-se <strong>singular</strong>, ou seja, não invertível. Isso pode resultar em:</p>
+<ul>
+<li><p><code>Singularidade:</code> Devido à alta colinearidade entre indivíduos ou marcadores, a matriz G pode se tornar singular, o que aumenta a chance de autovalores próximos de zero, impedindo sua inversão.</p></li>
+<li><p><code>Simetria:</code> A matriz G deve ser simétrica (G = G<sup>T</sup>), mas erros numéricos podem comprometer essa propriedade, especialmente em dados de alta dimensionalidade.</p></li>
+</ul>
+<p>Uma solução eficaz é adicionar uma pequena constante (<span class="math inline">\(λ\)</span>) à diagonal da matriz G, técnica conhecida como regularização (ou Ridge regression). Isso garante que G seja:</p>
+<ul>
+<li><p><code>Invertível:</code> <span class="math inline">\(λ\)</span> torna todos os autovalores positivos (&gt; 0), evitando singularidade.</p></li>
+<li><p><code>Simétrica:</code> Como <span class="math inline">\(λ\)</span> é adicionado apenas à diagonal, a estrutura da matriz é preservada.</p></li>
+</ul>
+<p>Matematicamente:</p>
+<p><span class="math inline">\(G^* = G + λI\)</span></p>
+<p>Onde:</p>
+<ul>
+<li><p><strong>G<sup>*</sup></strong> é a matriz regularizada;</p></li>
+<li><p><strong>G</strong> é a matriz de parentesco original;</p></li>
+<li><p><span class="math inline">\(λ\)</span> é o parâmetro de regularização;</p></li>
+<li><p><strong>I</strong> é a matriz identidade.</p></li>
+</ul>
+<section id="regularização" class="level4" data-number="3.2.2.1"><h4 data-number="3.2.2.1" class="anchored" data-anchor-id="regularização">
+<span class="header-section-number">3.2.2.1</span> <strong>Regularização</strong>
+</h4>
+<div class="cell">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Adicionar uma constante à diagonal de G </span></span>
+<span><span class="va">constante</span> <span class="op">&lt;-</span> <span class="fl">1e-6</span>  </span>
+<span><span class="va">matriz_G2</span> <span class="op">&lt;-</span> <span class="va">matriz_G</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/diag.html">diag</a></span><span class="op">(</span><span class="va">constante</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html">nrow</a></span><span class="op">(</span><span class="va">matriz_G</span><span class="op">)</span><span class="op">)</span>  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A constante adicionada à diagonal evita que a matriz G seja singular, garantindo que todos os autovalores sejam positivos.</p>
+<div class="cell">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># autovalores  </span></span>
+<span><span class="va">valores_G2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html">eigen</a></span><span class="op">(</span><span class="va">matriz_G2</span><span class="op">)</span><span class="op">$</span><span class="va">values</span>; <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">valores_G2</span>, <span class="fl">6</span><span class="op">)</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 2.773525 1.425256 1.311170 0.980834 0.769905 0.714315 0.654699 0.603492
+ [9] 0.547735 0.527675 0.509087 0.488386 0.478334 0.471056 0.451593 0.431404
+[17] 0.427385 0.417009 0.409006 0.398392 0.391493 0.383662 0.377427 0.370768
+[25] 0.355876 0.349070 0.344798 0.337011 0.332888 0.325659 0.323025 0.312400
+[33] 0.309522 0.307128 0.304553 0.297293 0.295760 0.291265 0.286260 0.282422
+[41] 0.277412 0.273611 0.269262 0.264048 0.261563 0.258322 0.255895 0.249516
+[49] 0.246084 0.244365 0.236309 0.233808 0.230765 0.225481 0.222138 0.216219
+[57] 0.213214 0.208241 0.201891 0.198663 0.195541 0.192958 0.190781 0.187177
+[65] 0.185042 0.182040 0.179031 0.173779 0.169268 0.167869 0.162012 0.157051
+[73] 0.152593 0.148585 0.146385 0.141206 0.139101 0.129674 0.122317 0.000001</code></pre>
+</div>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># último valor da diagonal (&gt; 0) - ok</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span><span class="op">(</span><span class="va">matriz_G2</span><span class="op">)</span>           <span class="co"># 80 x 80 - ok  </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/isSymmetric.html">isSymmetric</a></span><span class="op">(</span><span class="va">matriz_G2</span><span class="op">)</span>   <span class="co"># é simétrica - ok</span></span>
+<span></span>
+<span><span class="co"># Matriz A e G ok - matematicamente as matrizes estão corretas e podem ser usadas!</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section></section><section id="comparação-visual-das-matrizes" class="level3" data-number="3.2.3"><h3 data-number="3.2.3" class="anchored" data-anchor-id="comparação-visual-das-matrizes">
+<span class="header-section-number">3.2.3</span> Comparação visual das matrizes</h3>
+<div class="cell">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Converter as matrizes em formato longo para visualização</span></span>
+<span><span class="va">matriz_A_long</span> <span class="op">&lt;-</span> <span class="fu">melt</span><span class="op">(</span><span class="va">matriz_A2</span><span class="op">)</span></span>
+<span><span class="va">matriz_G_long</span> <span class="op">&lt;-</span> <span class="fu">melt</span><span class="op">(</span><span class="va">matriz_G2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Adicionar uma coluna para identificar a matriz de origem</span></span>
+<span><span class="va">matriz_A_long</span><span class="op">$</span><span class="va">Matriz</span> <span class="op">&lt;-</span> <span class="st">"A"</span></span>
+<span><span class="va">matriz_G_long</span><span class="op">$</span><span class="va">Matriz</span> <span class="op">&lt;-</span> <span class="st">"G"</span></span>
+<span></span>
+<span><span class="co"># Combinar as duas matrizes em um único data.frame</span></span>
+<span><span class="va">matriz_combinada</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span><span class="va">matriz_A_long</span>, <span class="va">matriz_G_long</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Plotar as matrizes lado a lado (comparação) </span></span>
+<span><span class="fu">ggplot</span><span class="op">(</span><span class="va">matriz_combinada</span>, <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">Var1</span>, y <span class="op">=</span> <span class="va">Var2</span>, fill <span class="op">=</span> <span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_tile</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">facet_wrap</span><span class="op">(</span><span class="op">~</span> <span class="va">Matriz</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">scale_fill_gradient</span><span class="op">(</span>low <span class="op">=</span> <span class="st">"white"</span>, high <span class="op">=</span> <span class="st">"blue"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Comparação entre Matrizes A e G"</span>, x <span class="op">=</span> <span class="st">"Indivíduos"</span>, y <span class="op">=</span> <span class="st">"Indivíduos"</span>, fill <span class="op">=</span> <span class="st">"Parentesco"</span><span class="op">)</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure"><p><img src="Analise_Ana_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>A <strong>comparação entre as matrizes de parentesco</strong> A (pedigree) e G (genômica) revela diferenças na magnitude dos valores de parentesco. A matriz A apresenta cores mais intensas tanto na diagonal quanto fora dela, indicando valores mais elevados e uma estrutura genealógica bem definida. Em contraste, a matriz G exibe tonalidades mais claras em toda sua extensão, o que reflete valores de parentesco geralmente mais baixos. Essa redução na intensidade pode estar associada à limitação dos marcadores SSR utilizados, que, por sua natureza e densidade reduzida, capturam menos variação genômica compartilhada entre os indivíduos. Ainda assim, a preservação da diagonal indica consistência nas autorrelações, e a estrutura geral, embora atenuada, mantém certa semelhança com a matriz A.</p>
+<div class="cell">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Calcular a diferença entre as matrizes</span></span>
+<span><span class="op">(</span><span class="va">diferenca_AG</span> <span class="op">&lt;-</span> <span class="va">matriz_A2</span> <span class="op">-</span> <span class="va">matriz_G2</span><span class="op">)</span></span>
+<span><span class="va">diferenca_df</span> <span class="op">&lt;-</span> <span class="fu">melt</span><span class="op">(</span><span class="va">diferenca_AG</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co">## Visualizar a matriz de diferenças com heatmap</span></span>
+<span><span class="fu">ggplot</span><span class="op">(</span><span class="va">diferenca_df</span>, <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">Var1</span>, y <span class="op">=</span> <span class="va">Var2</span>, fill <span class="op">=</span> <span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_tile</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">scale_fill_gradient2</span><span class="op">(</span>low <span class="op">=</span> <span class="st">"blue"</span>, mid <span class="op">=</span> <span class="st">"white"</span>, high <span class="op">=</span> <span class="st">"red"</span>, midpoint <span class="op">=</span> <span class="fl">0</span>, limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">min</a></span><span class="op">(</span><span class="va">diferenca_df</span><span class="op">$</span><span class="va">value</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span><span class="va">diferenca_df</span><span class="op">$</span><span class="va">value</span><span class="op">)</span><span class="op">)</span>, name <span class="op">=</span> <span class="st">"A - G"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Diferenças entre Matrizes de Parentesco (Pedigree - Genômica)"</span>, x <span class="op">=</span> <span class="st">"Indivíduos"</span>, y <span class="op">=</span> <span class="st">"Indivíduos"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">theme</span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">element_text</span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">90</span>, hjust <span class="op">=</span> <span class="fl">1</span>, size <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>, axis.text.y <span class="op">=</span> <span class="fu">element_text</span><span class="op">(</span>size <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>, legend.position <span class="op">=</span> <span class="st">"right"</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure"><p><img src="Analise_Ana_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>O <strong>gráfico de diferenças (A - G)</strong> evidencia que os valores derivados do pedigree (A) são consistentemente superiores aos da matriz genômica (G), com predomínio de tons vermelhos ao longo da matriz. Essa diferença é mais pronunciada na diagonal e entre indivíduos com algum grau de parentesco, refletindo a tendência da matriz A em atribuir valores mais altos, enquanto a matriz G, construída a partir de marcadores SSR, resulta em estimativas mais conservadoras. Isso sugere que a matriz genômica está capturando uma proporção menor da variabilidade genética esperada, o que pode estar relacionado à natureza dos dados moleculares utilizados. Mesmo assim, os padrões de agrupamento presentes nas diferenças indicam que ambas as matrizes compartilham informações estruturais sobre as relações entre os indivíduos.</p>
+</section></section><section id="matriz-h-para-cada-combinação-de-tau-e-omega" class="level2" data-number="3.3"><h2 data-number="3.3" class="anchored" data-anchor-id="matriz-h-para-cada-combinação-de-tau-e-omega">
+<span class="header-section-number">3.3</span> Matriz H para cada combinação de <span class="math inline">\(\tau\)</span> e <span class="math inline">\(\omega\)</span>
+</h2>
+<p>Como alternativa à validação cruzada proposta por <a href="https://doi.org/10.1093/bioinformatics/btad445">Amadeu et al.&nbsp;(2023)</a> para avaliar o impacto dos pesos na capacidade preditiva, consideraram-se duas estratégias diferentes:</p>
+<ul>
+<li><p><code>Grid Search (busca exaustiva):</code> testa todas as combinações possíveis de <span class="math inline">\(\tau\)</span> e <span class="math inline">\(\omega\)</span> dentro de uma grade predefinida; e</p></li>
+<li><p><code>Otimização Bayesiana (processo iterativo):</code> explora o espaço de parâmetros de forma mais inteligente, priorizando regiões mais promissoras.</p></li>
+</ul>
+<p>Para o cálculo da matriz H nos dois procedimentos, foi necessário calcular a média dos valores fenotípicos entre cortes para cada genótipo, uma vez que a análise requer um único valor por indivíduo, sem repetições.</p>
+<section id="dados-fenotípicos" class="level3" data-number="3.3.1"><h3 data-number="3.3.1" class="anchored" data-anchor-id="dados-fenotípicos">
+<span class="header-section-number">3.3.1</span> Dados fenotípicos</h3>
+<div class="cell">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Carregar os dados fenotípicos </span></span>
+<span><span class="va">dat_fen</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.table</a></span><span class="op">(</span><span class="st">"fenotipo.csv"</span>, header<span class="op">=</span><span class="cn">TRUE</span>, sep<span class="op">=</span><span class="st">";"</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">dat_fen</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">dat_fen</span><span class="op">)</span></span>
+<span><span class="va">dat_fen</span><span class="op">$</span><span class="va">tph</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html">gsub</a></span><span class="op">(</span><span class="st">","</span>, <span class="st">"."</span>, <span class="va">dat_fen</span><span class="op">$</span><span class="va">tph</span><span class="op">)</span><span class="op">)</span>  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Calcular a média por genótipo</span></span>
+<span><span class="va">pheno_means</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html">aggregate</a></span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">geno</span>, data <span class="op">=</span> <span class="va">dat_fen</span>, FUN <span class="op">=</span> <span class="va">mean</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">pheno_data</span> <span class="op">&lt;-</span> <span class="va">pheno_means</span><span class="op">$</span><span class="va">tph</span>           <span class="co"># Extrair os valores médios</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">pheno_data</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">pheno_means</span><span class="op">$</span><span class="va">geno</span>   <span class="co"># Nomear os valores com os genótipos</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Criar um data.frame </span></span>
+<span><span class="va">pheno_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span></span>
+<span>  geno <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">pheno_data</span><span class="op">)</span>,   </span>
+<span>  Y <span class="op">=</span> <span class="va">pheno_data</span>               </span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Alterar o nome dos genótipos</span></span>
+<span><span class="va">pheno_df</span> <span class="op">&lt;-</span> <span class="va">pheno_df</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu">left_join</span><span class="op">(</span><span class="va">genotipos</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"geno"</span> <span class="op">=</span> <span class="st">"G"</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>geno <span class="op">=</span> <span class="va">id</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu">select</span><span class="op">(</span><span class="op">-</span><span class="va">id</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      geno         Y
+1 RB721012 13.358333
+2  RB72199 23.000000
+3  RB72454 30.664167
+4 RB725053 18.668333
+5 RB725828  9.869091
+6 RB732577 16.317500</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        geno        Y
+75 SP81-1763 23.04250
+76 SP81-3250 16.69636
+77 SP83-2847 25.33333
+78 SP83-5073 20.70833
+79 SP89-1115 22.66167
+80 SP91-1049 24.86333</code></pre>
+</div>
+</div>
+<p>Segundo <a href="https://doi.org/10.1186/s12711-018-0386-x">Martini et al.&nbsp;(2018)</a>, é preciso avaliar cada combinação de <span class="math inline">\(\tau\)</span> e <span class="math inline">\(\omega\)</span> em termos de:</p>
+<ul>
+<li><p><code>Capacidade Preditiva:</code> Correlação entre fenótipos observados e valores preditos;</p></li>
+<li><p><code>Inflação:</code> Inclinação da regressão dos fenótipos observados em relação aos valores preditos;</p></li>
+<li><p><code>Erro Quadrático Médio (MSE):</code> usada para avaliar a qualidade de um modelo de predição (um modelo com menor MSE é considerado melhor, pois tem erros menores nas predições).</p></li>
+</ul>
+<p>Definição geral dos parâmetros na Matriz H: A matriz no método Martini et al.&nbsp;(2018) combina as seguintes informações:</p>
+<p><span class="math inline">\({H}_{22}=(\tau G^{-1}+(1-\omega){A}_{22}^{-1})^{-1}\)</span></p>
+<p>Em que:</p>
+<ul>
+<li><p><span class="math inline">\(\tau\)</span>: Controla o peso da matriz genômica (G)</p></li>
+<li><p><span class="math inline">\(\omega\)</span>: Controla o peso da matriz de pedigree (A)</p></li>
+</ul>
+<p>Os parâmetros são usados para melhorar a convergência e reduzir inflação nas predições.</p>
+</section><section id="grid-search-método-1" class="level3" data-number="3.3.2"><h3 data-number="3.3.2" class="anchored" data-anchor-id="grid-search-método-1">
+<span class="header-section-number">3.3.2</span> Grid Search (Método 1)</h3>
+<div class="cell">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Definir a grade de parâmetros</span></span>
+<span><span class="va">tau_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">2.0</span>, by <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>      <span class="co"># tau de 0.1 a 2.0, com incrementos de 0.1</span></span>
+<span><span class="va">omega_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span>, by <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>   <span class="co"># omega de -1.0 a 1.0, com incrementos de 0.1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Lista para armazenar as matrizes H</span></span>
+<span><span class="va">H_matrizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Criar uma lista para armazenar os resultados</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Iterar sobre as combinações de tau e omega</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">tau</span> <span class="kw">in</span> <span class="va">tau_values</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">omega</span> <span class="kw">in</span> <span class="va">omega_values</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    </span>
+<span>    <span class="co"># Calcular a matriz H com os parâmetros tau e omega</span></span>
+<span>    <span class="va">H</span> <span class="op">&lt;-</span> <span class="fu">Hmatrix</span><span class="op">(</span>A <span class="op">=</span> <span class="va">matriz_A2</span>, G <span class="op">=</span> <span class="va">matriz_G2</span>, tau <span class="op">=</span> <span class="va">tau</span>, omega <span class="op">=</span> <span class="va">omega</span>, method <span class="op">=</span> <span class="st">"Martini"</span><span class="op">)</span></span>
+<span>    </span>
+<span>    <span class="co"># Forçar simetria na matriz H</span></span>
+<span>    <span class="va">H_sym</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">H</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="va">H</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span>    </span>
+<span>    <span class="co"># o método "Martini" pode introduzir assimetrias se as matrizes A e G não estiverem perfeitamente alinhadas</span></span>
+<span>    </span>
+<span>    <span class="co"># Armazenar a matriz H na lista</span></span>
+<span>    <span class="va">H_matrizes</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"tau"</span>, <span class="va">tau</span>, <span class="st">"omega"</span>, <span class="va">omega</span>, sep <span class="op">=</span> <span class="st">"_"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">H_sym</span>   </span>
+<span>    </span>
+<span>    <span class="co"># length(H_matrizes) # 420 combinações de tau e omega - ok </span></span>
+<span>    </span>
+<span>    <span class="co"># Ajustar o modelo misto usando a matriz H</span></span>
+<span>    <span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="fl">1</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">H_sym</span><span class="op">)</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="va">units</span>, data <span class="op">=</span> <span class="va">pheno_df</span><span class="op">)</span></span>
+<span>    <span class="co">#summary(model)</span></span>
+<span>    </span>
+<span>    <span class="co"># Obter os valores preditos</span></span>
+<span>    <span class="va">predicted_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span><span class="op">(</span><span class="va">model</span>, D <span class="op">=</span> <span class="st">"geno"</span><span class="op">)</span><span class="op">$</span><span class="va">pval</span></span>
+<span>    <span class="va">blups</span> <span class="op">&lt;-</span> <span class="va">predicted_values</span><span class="op">$</span><span class="va">predicted.value</span></span>
+<span>    </span>
+<span>    <span class="co"># Calcular a capacidade preditiva (correlação entre observado e predito)</span></span>
+<span>    <span class="va">predictive_ability</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html">cor</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">Y</span>, <span class="va">blups</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">geno</span>, <span class="va">predicted_values</span><span class="op">$</span><span class="va">geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span>    </span>
+<span>    <span class="co"># Calcular a inflação (coeficiente de regressão)</span></span>
+<span>    <span class="va">inflation</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">Y</span> <span class="op">~</span> <span class="va">blups</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">geno</span>, <span class="va">predicted_values</span><span class="op">$</span><span class="va">geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span></span>
+<span>    </span>
+<span>    <span class="co"># Calcular o Erro Quadrático Médio (MSE) para cada combinação de tau e omega</span></span>
+<span>    <span class="va">mse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">Y</span> <span class="op">-</span> <span class="va">blups</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">geno</span>, <span class="va">predicted_values</span><span class="op">$</span><span class="va">geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
+<span>    </span>
+<span>    <span class="co"># Armazenar os resultados</span></span>
+<span>    <span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span><span class="va">results</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span></span>
+<span>      tau <span class="op">=</span> <span class="va">tau</span>,</span>
+<span>      omega <span class="op">=</span> <span class="va">omega</span>,</span>
+<span>      predictive_ability <span class="op">=</span> <span class="va">predictive_ability</span>,</span>
+<span>      inflation <span class="op">=</span> <span class="va">inflation</span>,</span>
+<span>      mse <span class="op">=</span> <span class="va">mse</span>,  </span>
+<span>      row.names <span class="op">=</span> <span class="cn">NULL</span>   <span class="co"># remove os nomes das linhas</span></span>
+<span>    <span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  tau omega predictive_ability inflation       mse
+1 0.1  -1.0          0.9637358  1.799731 10.923778
+2 0.1  -0.9          0.9648356  1.784018 10.677996
+3 0.1  -0.8          0.9659983  1.767202 10.413721
+4 0.1  -0.7          0.9672289  1.749165 10.128901
+5 0.1  -0.6          0.9685330  1.729776  9.821190
+6 0.1  -0.5          0.9699166  1.708882  9.487902</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    tau omega predictive_ability inflation       mse
+415   2   0.5          0.9985690  1.109809 0.5415271
+416   2   0.6          0.9983635  1.117411 0.6124451
+417   2   0.7          0.9981016  1.126479 0.7015628
+418   2   0.8          0.9977659  1.137286 0.8138964
+419   2   0.9          0.9973318  1.150198 0.9563650
+420   2   1.0          0.9967618  1.165773 1.1393667</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Adicionar uma coluna "is_best" para indicar as melhores combinações</span></span>
+<span></span>
+<span><span class="co"># Definir um limite para considerar uma combinação como "melhor"</span></span>
+<span><span class="va">threshold_predictive_ability</span> <span class="op">&lt;-</span> <span class="fl">0.95</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">predictive_ability</span><span class="op">)</span>  <span class="co"># 95% da capacidade preditiva máxima</span></span>
+<span><span class="va">threshold_inflation</span> <span class="op">&lt;-</span> <span class="fl">1.1</span>  <span class="co"># Inflação máxima de 1.1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Criar a coluna "is_best"</span></span>
+<span><span class="va">results</span><span class="op">$</span><span class="va">is_best</span> <span class="op">&lt;-</span> <span class="va">results</span><span class="op">$</span><span class="va">predictive_ability</span> <span class="op">&gt;=</span> <span class="va">threshold_predictive_ability</span> <span class="op">&amp;</span> <span class="va">results</span><span class="op">$</span><span class="va">inflation</span> <span class="op">&lt;=</span> <span class="va">threshold_inflation</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  tau omega predictive_ability inflation       mse is_best
+1 0.1  -1.0          0.9637358  1.799731 10.923778   FALSE
+2 0.1  -0.9          0.9648356  1.784018 10.677996   FALSE
+3 0.1  -0.8          0.9659983  1.767202 10.413721   FALSE
+4 0.1  -0.7          0.9672289  1.749165 10.128901   FALSE
+5 0.1  -0.6          0.9685330  1.729776  9.821190   FALSE
+6 0.1  -0.5          0.9699166  1.708882  9.487902   FALSE</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    tau omega predictive_ability inflation       mse is_best
+415   2   0.5          0.9985690  1.109809 0.5415271   FALSE
+416   2   0.6          0.9983635  1.117411 0.6124451   FALSE
+417   2   0.7          0.9981016  1.126479 0.7015628   FALSE
+418   2   0.8          0.9977659  1.137286 0.8138964   FALSE
+419   2   0.9          0.9973318  1.150198 0.9563650   FALSE
+420   2   1.0          0.9967618  1.165773 1.1393667   FALSE</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Filtrar apenas as combinações onde is_best é TRUE</span></span>
+<span><span class="va">best_combinations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html">subset</a></span><span class="op">(</span><span class="va">results</span>, <span class="va">is_best</span> <span class="op">==</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">best_combinations</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">best_combinations</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   tau omega predictive_ability inflation       mse is_best
+20 0.1   0.9          0.9990782  1.090142 0.3718745    TRUE
+40 0.2   0.8          0.9990782  1.090142 0.3718750    TRUE
+41 0.2   0.9          0.9990903  1.087922 0.3577310    TRUE
+60 0.3   0.7          0.9990782  1.090142 0.3718750    TRUE
+61 0.3   0.8          0.9991835  1.083709 0.3256001    TRUE
+62 0.3   0.9          0.9988184  1.099869 0.4542295    TRUE</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    tau omega predictive_ability inflation       mse is_best
+408   2  -0.2          0.9991619  1.084632 0.3326684    TRUE
+409   2  -0.1          0.9991327  1.085968 0.3427933    TRUE
+410   2   0.0          0.9990903  1.087922 0.3577309    TRUE
+411   2   0.1          0.9990325  1.090563 0.3782737    TRUE
+412   2   0.2          0.9989562  1.093971 0.4054337    TRUE
+413   2   0.3          0.9988573  1.098238 0.4405060    TRUE</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Selecionar a combinação com a maior capacidade preditiva</span></span>
+<span><span class="op">(</span><span class="va">best_combination</span> <span class="op">&lt;-</span> <span class="va">best_combinations</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html">which.max</a></span><span class="op">(</span><span class="va">best_combinations</span><span class="op">$</span><span class="va">predictive_ability</span><span class="op">)</span>, <span class="op">]</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    tau omega predictive_ability inflation       mse is_best
+365 1.8  -0.3          0.9991887  1.083608 0.3245938    TRUE</code></pre>
+</div>
+</div>
+<p><strong>Fim da análise Grid Search!</strong> Agora que temos a melhor combinação de parâmetros, podemos calcular a matriz H com a inclusão dos pesos (parâmetros).</p>
+<div class="cell">
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Calcular a matriz H </span></span>
+<span><span class="va">matriz_H</span><span class="op">=</span><span class="fu">Hmatrix</span><span class="op">(</span><span class="va">matriz_A2</span>, <span class="va">matriz_G2</span>, tau<span class="op">=</span><span class="fl">1.8</span>, omega<span class="op">=</span><span class="op">-</span><span class="fl">0.3</span>, method<span class="op">=</span><span class="st">"Martini"</span><span class="op">)</span> <span class="op">%&gt;%</span> </span>
+<span>  <span class="op">{</span><span class="op">(</span><span class="va">.</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span><span class="op">)</span><span class="op">/</span><span class="fl">2</span><span class="op">}</span>  <span class="co"># Simetrização</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Autovalores</span></span>
+<span><span class="va">valores_H</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html">eigen</a></span><span class="op">(</span><span class="va">matriz_H</span><span class="op">)</span><span class="op">$</span><span class="va">values</span>; <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">valores_H</span>, <span class="fl">6</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0.459643 0.411577 0.362517 0.303356 0.283831 0.274708 0.249901 0.230136
+ [9] 0.210752 0.203709 0.201760 0.196258 0.191352 0.182453 0.177608 0.176284
+[17] 0.173716 0.172124 0.168836 0.164142 0.160997 0.159257 0.150870 0.150473
+[25] 0.147896 0.146501 0.144749 0.141374 0.140249 0.138679 0.134992 0.132150
+[33] 0.131806 0.128365 0.127520 0.126629 0.125042 0.123179 0.121325 0.120001
+[41] 0.118140 0.117024 0.116506 0.114831 0.114606 0.111578 0.109824 0.107613
+[49] 0.106847 0.104555 0.103821 0.101077 0.100297 0.098822 0.097379 0.096186
+[57] 0.092987 0.091854 0.088447 0.087828 0.087251 0.085262 0.084077 0.082992
+[65] 0.080916 0.079607 0.077838 0.076851 0.074886 0.073407 0.071799 0.070192
+[73] 0.068282 0.067062 0.066530 0.061348 0.057163 0.053635 0.037995 0.000001</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Verificar se a matriz é simétrica</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/isSymmetric.html">isSymmetric</a></span><span class="op">(</span><span class="va">matriz_H</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+</section><section id="otimização-bayesiana-método-2" class="level3" data-number="3.3.3"><h3 data-number="3.3.3" class="anchored" data-anchor-id="otimização-bayesiana-método-2">
+<span class="header-section-number">3.3.3</span> Otimização bayesiana (Método 2)</h3>
+<div class="cell">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Criar uma lista para armazenar os resultados</span></span>
+<span><span class="va">results_bayes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Função objetivo para otimização bayesiana</span></span>
+<span><span class="va">objective_function</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">tau</span>, <span class="va">omega</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  </span>
+<span>  <span class="co"># Calcular a matriz H com os parâmetros tau e omega</span></span>
+<span>  <span class="va">H</span> <span class="op">&lt;-</span> <span class="fu">Hmatrix</span><span class="op">(</span>A <span class="op">=</span> <span class="va">matriz_A2</span>, G <span class="op">=</span> <span class="va">matriz_G2</span>, tau <span class="op">=</span> <span class="va">tau</span>, omega <span class="op">=</span> <span class="va">omega</span>, method <span class="op">=</span> <span class="st">"Martini"</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Forçar simetria na matriz H</span></span>
+<span>  <span class="va">H_sym</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">H</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="va">H</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span></span>
+<span>  </span>
+<span>  <span class="co"># Ajustar o modelo misto usando a matriz H_sym</span></span>
+<span>  <span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="fl">1</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">H_sym</span><span class="op">)</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="va">units</span>, data <span class="op">=</span> <span class="va">pheno_df</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Obter os valores preditos</span></span>
+<span>  <span class="va">predicted_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html">predict</a></span><span class="op">(</span><span class="va">model</span>, D <span class="op">=</span> <span class="st">"geno"</span><span class="op">)</span><span class="op">$</span><span class="va">pval</span></span>
+<span>  <span class="va">blups</span> <span class="op">&lt;-</span> <span class="va">predicted_values</span><span class="op">$</span><span class="va">predicted.value</span></span>
+<span>  </span>
+<span>  <span class="co"># Calcular a capacidade preditiva (correlação entre observado e predito)</span></span>
+<span>  <span class="va">predictive_ability</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html">cor</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">Y</span>, <span class="va">blups</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">geno</span>, <span class="va">predicted_values</span><span class="op">$</span><span class="va">geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Calcular a inflação (coeficiente de regressão)</span></span>
+<span>  <span class="va">inflation</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">Y</span> <span class="op">~</span> <span class="va">blups</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">geno</span>, <span class="va">predicted_values</span><span class="op">$</span><span class="va">geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span></span>
+<span>  </span>
+<span>  <span class="co"># Calcular o Erro Quadrático Médio (MSE)</span></span>
+<span>  <span class="va">mse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">Y</span> <span class="op">-</span> <span class="va">blups</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="va">pheno_df</span><span class="op">$</span><span class="va">geno</span>, <span class="va">predicted_values</span><span class="op">$</span><span class="va">geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Armazenar os resultados na tabela</span></span>
+<span>  <span class="va">results_bayes</span> <span class="op">&lt;&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span><span class="va">results_bayes</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span></span>
+<span>    tau <span class="op">=</span> <span class="va">tau</span>,</span>
+<span>    omega <span class="op">=</span> <span class="va">omega</span>,</span>
+<span>    predictive_ability <span class="op">=</span> <span class="va">predictive_ability</span>,</span>
+<span>    inflation <span class="op">=</span> <span class="va">inflation</span>,</span>
+<span>    mse <span class="op">=</span> <span class="va">mse</span></span>
+<span>  <span class="op">)</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Retornar a capacidade preditiva como métrica a ser maximizada</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html">return</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>Score <span class="op">=</span> <span class="va">predictive_ability</span>, Pred <span class="op">=</span> <span class="va">inflation</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Definir os limites para tau e omega</span></span>
+<span><span class="va">bounds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>tau <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">2.0</span><span class="op">)</span>,         <span class="co"># tau entre 0.1 e 2.0</span></span>
+<span>               omega <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1.0</span>, <span class="fl">1.0</span><span class="op">)</span><span class="op">)</span>      <span class="co"># omega entre -1.0 e 1.0</span></span>
+<span></span>
+<span><span class="co"># Executar a otimização bayesiana</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span>                <span class="co"># Definir semente para reprodutibilidade</span></span>
+<span><span class="va">bayes_opt</span> <span class="op">&lt;-</span> <span class="fu">BayesianOptimization</span><span class="op">(</span></span>
+<span>  FUN <span class="op">=</span> <span class="va">objective_function</span>,  <span class="co"># Função objetivo</span></span>
+<span>  bounds <span class="op">=</span> <span class="va">bounds</span>,           <span class="co"># Limites dos parâmetros</span></span>
+<span>  init_points <span class="op">=</span> <span class="fl">10</span>,          <span class="co"># Número de pontos iniciais aleatórios para explorar o espaço de busca</span></span>
+<span>  n_iter <span class="op">=</span> <span class="fl">20</span>,               <span class="co"># Número de iterações após os pontos iniciais</span></span>
+<span>  acq <span class="op">=</span> <span class="st">"ucb"</span>,               <span class="co"># Função de aquisição (Upper Confidence Bound)</span></span>
+<span>  kappa <span class="op">=</span> <span class="fl">2.576</span>,             <span class="co"># Parâmetro de exploração (default) - Valores maiores exploram mais</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>             <span class="co"># Mostrar progresso</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Resultados da otimização</span></span>
+<span><span class="va">bayes_opt</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Extrair o histórico de iterações</span></span>
+<span><span class="va">history_bayes</span> <span class="op">&lt;-</span> <span class="va">bayes_opt</span><span class="op">$</span><span class="va">History</span></span>
+<span></span>
+<span><span class="co"># Tabela de resultados</span></span>
+<span><span class="va">results_bayes_rounded</span> <span class="op">&lt;-</span> <span class="va">results_bayes</span> <span class="op">%&gt;%</span></span>
+<span>    <span class="fu">mutate</span><span class="op">(</span></span>
+<span>      tau <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">tau</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>      omega <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">omega</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">results_bayes_rounded</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="cn">NULL</span>; <span class="va">results_bayes_rounded</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   tau omega predictive_ability inflation        mse
+1  0.6   0.9          0.9980004  1.129825  0.7356442
+2  1.6  -0.1          0.9991864  1.083615  0.3248298
+3  0.9   0.4          0.9991883  1.083665  0.3249406
+4  1.8   0.1          0.9990701  1.088851  0.3649068
+5  1.9  -0.8          0.9991119  1.088283  0.3580059
+6  0.2   0.8          0.9990175  1.093383  0.3966109
+7  1.1  -0.5          0.9986740  1.110098  0.5346158
+8  1.8  -0.9          0.9990237  1.093058  0.3940974
+9  1.1  -0.3          0.9989208  1.098336  0.4357335
+10 1.0   0.9          0.9977199  1.138705  0.8291190
+11 0.1  -0.1          0.9780974  1.577643  7.3614097
+12 2.0   1.0          0.9967618  1.165773  1.1393667
+13 0.1  -1.0          0.9637358  1.799731 10.9237783
+14 1.6   1.0          0.9967620  1.165765  1.1392726
+15 1.3  -1.0          0.9983248  1.125206  0.6730813
+16 1.5   0.5          0.9987475  1.102786  0.4791953
+17 0.1   1.0          0.9967657  1.165658  1.1380100
+18 1.5  -0.7          0.9989816  1.095252  0.4111865
+19 2.0  -1.0          0.9990782  1.090142  0.3718746
+20 2.0  -0.2          0.9991621  1.084623  0.3326045
+21 0.5   0.6          0.9991881  1.083579  0.3244752
+22 1.2   0.3          0.9991568  1.084862  0.3344116
+23 0.9   0.6          0.9990340  1.090498  0.3777647
+24 2.0   0.5          0.9986280  1.107536  0.5210130
+25 1.8  -0.4          0.9991859  1.083878  0.3263529
+26 0.1   0.7          0.9956181  1.215406  1.7110256
+27 0.3   1.0          0.9978523  1.134581  0.7851728
+28 0.7  -1.0          0.9951599  1.228234  1.8814922
+29 0.7   0.0          0.9984443  1.120201  0.6258459
+30 0.9  -1.0          0.9969746  1.174206  1.1978608</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Extrair os melhores parâmetros</span></span>
+<span><span class="op">(</span><span class="va">best_tau</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">bayes_opt</span><span class="op">$</span><span class="va">Best_Par</span><span class="op">[</span><span class="st">"tau"</span><span class="op">]</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tau 
+0.9 </code></pre>
+</div>
+<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="op">(</span><span class="va">best_omega</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">bayes_opt</span><span class="op">$</span><span class="va">Best_Par</span><span class="op">[</span><span class="st">"omega"</span><span class="op">]</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>omega 
+  0.4 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Extrair a capacidade preditiva e a inflação</span></span>
+<span><span class="op">(</span><span class="va">best_predictive_ability</span> <span class="op">&lt;-</span> <span class="va">bayes_opt</span><span class="op">$</span><span class="va">Best_Value</span><span class="op">)</span></span>
+<span><span class="op">(</span><span class="va">best_inflation</span> <span class="op">&lt;-</span> <span class="va">bayes_opt</span><span class="op">$</span><span class="va">Pred</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Fim da análise da Otimização bayesiana!</strong> Agora que temos a melhor combinação de parâmetros, podemos calcular a matriz H.</p>
+<div class="cell">
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Calcular a matriz H com os melhores parâmetros</span></span>
+<span><span class="va">matriz_H2</span> <span class="op">&lt;-</span> <span class="fu">Hmatrix</span><span class="op">(</span><span class="va">matriz_A2</span>, <span class="va">matriz_G2</span>, tau <span class="op">=</span> <span class="va">best_tau</span>, omega <span class="op">=</span> <span class="va">best_omega</span>, method <span class="op">=</span> <span class="st">"Martini"</span><span class="op">)</span> <span class="op">%&gt;%</span> </span>
+<span>                       <span class="op">{</span><span class="op">(</span><span class="va">.</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html">t</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span><span class="op">)</span><span class="op">/</span><span class="fl">2</span><span class="op">}</span>  <span class="co"># Simetrização</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Autovalores</span></span>
+<span><span class="va">valores_H2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eigen.html">eigen</a></span><span class="op">(</span><span class="va">matriz_H2</span><span class="op">)</span><span class="op">$</span><span class="va">values</span>; <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="va">valores_H2</span>, <span class="fl">6</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0.955994 0.855035 0.748288 0.624092 0.582378 0.562454 0.512676 0.470712
+ [9] 0.430619 0.416338 0.412396 0.400226 0.390265 0.372246 0.362598 0.359868
+[17] 0.353817 0.351137 0.344137 0.334838 0.328007 0.324544 0.308043 0.306590
+[25] 0.301000 0.298024 0.295115 0.288119 0.285673 0.282117 0.274685 0.269007
+[33] 0.268137 0.261011 0.259474 0.257912 0.254439 0.251067 0.246755 0.244436
+[41] 0.240472 0.238078 0.237205 0.233366 0.233041 0.227288 0.223080 0.218719
+[49] 0.217079 0.212794 0.211577 0.205127 0.203554 0.200560 0.198636 0.195955
+[57] 0.188931 0.186215 0.179526 0.178583 0.177440 0.173245 0.170601 0.168655
+[65] 0.164350 0.161789 0.158053 0.156321 0.151985 0.149210 0.146137 0.142804
+[73] 0.138689 0.136060 0.134908 0.125197 0.116034 0.110073 0.079724 0.000001</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Verificar se a matriz é simétrica</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/isSymmetric.html">isSymmetric</a></span><span class="op">(</span><span class="va">matriz_H2</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+</section><section id="comparação-de-resultados-das-duas-abordagens" class="level3" data-number="3.3.4"><h3 data-number="3.3.4" class="anchored" data-anchor-id="comparação-de-resultados-das-duas-abordagens">
+<span class="header-section-number">3.3.4</span> Comparação de resultados das duas abordagens</h3>
+<div class="cell">
+<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Melhores resultados do Grid Search</span></span>
+<span><span class="op">(</span><span class="va">best_grid_search</span> <span class="op">&lt;-</span> <span class="va">results</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html">which.max</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">predictive_ability</span><span class="op">)</span>, <span class="op">]</span><span class="op">)</span>     <span class="co"># tau = 1.8; omega = -0.3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    tau omega predictive_ability inflation       mse is_best
+365 1.8  -0.3          0.9991887  1.083608 0.3245938    TRUE</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Melhores resultados da Otimização Bayesiana</span></span>
+<span><span class="op">(</span><span class="va">best_bayes_opt</span> <span class="op">&lt;-</span> <span class="va">results_bayes_rounded</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html">which.max</a></span><span class="op">(</span><span class="va">history_bayes</span><span class="op">$</span><span class="va">Value</span><span class="op">)</span>, <span class="op">]</span><span class="op">)</span> <span class="co"># tau = 0.9; omega = 0.4</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  tau omega predictive_ability inflation       mse
+3 0.9   0.4          0.9991883  1.083665 0.3249406</code></pre>
+</div>
+</div>
+<p>De acordo com <a href="https://doi.org/10.1186/s12711-018-0386-x">Martini et al.&nbsp;(2018)</a>, diferentes combinações de parâmetros podem levar a desempenhos preditivos semelhantes. Os autores observaram que múltiplas configurações podem apresentar desempenhos estatísticos equivalentes. Os resultados das duas abordagens avaliadas confirmam essa observação: diferentes combinações produzem resultados similares.</p>
+<p>No <strong>Grid Search</strong>, das 420 combinações avaliadas, 72 combinações distintas que atenderam aos critérios de melhor ajuste (is_best == TRUE). Já na <strong>Otimização Bayesiana</strong>, também foram encontradas várias combinações com desempenho semelhantes, totalizando 30 combinações diferentes. Essa diferença quantitativa reflete a <strong>natureza dos métodos</strong>: enquanto o Grid Search realiza uma varredura exaustiva no espaço de parâmetros, a Otimização Bayesiana adota uma estratégia mais eficiente, concentrando-se em regiões mais promissoras.</p>
+<p><strong>Mas qual abordagem é melhor?</strong></p>
+<p>A interpretação dos parâmetros (<span class="math inline">\(\tau\)</span>) e (<span class="math inline">\(\omega\)</span>) nas duas combinações encontradas revela estratégias distintas de ponderação entre as informações genômicas e de pedigree, como é observado na tabela abaixo:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 31%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Método</strong></td>
+<td><strong>Grid Search</strong></td>
+<td><strong>Otimização Bayesiana</strong></td>
+</tr>
+<tr class="even">
+<td>Combinação</td>
+<td>
+<span class="math inline">\(\tau\)</span> = 1,8; <span class="math inline">\(\omega\)</span> = -0,3</td>
+<td>
+<span class="math inline">\(\tau\)</span> = 0,9; <span class="math inline">\(\omega\)</span> = 0,4</td>
+</tr>
+<tr class="odd">
+<td>Desempenho Preditivo</td>
+<td>0.9991887</td>
+<td>0.9991883</td>
+</tr>
+<tr class="even">
+<td>Complexidade</td>
+<td>Alta (valores extremos, <span class="math inline">\(\omega\)</span> negativo)</td>
+<td>Moderada (equilíbrio entre genômica e pedigree)</td>
+</tr>
+<tr class="odd">
+<td>Risco</td>
+<td>Potencial de overfitting devido a <span class="math inline">\(\tau\)</span> elevado e <span class="math inline">\(\omega\)</span> negativo</td>
+<td>Menor risco, parâmetros mais conservadores</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ambas as abordagens mantêm a predominância da matriz genômica sobre a de pedigree</strong>, mas com diferenças significativas na ponderação. A solução obtida via <strong>Grid Search</strong> apresenta valores mais extremos, com peso elevado para a informação genômica e um valor negativo para o parâmetro de pedigree. Nesse caso, o valor negativo de <span class="math inline">\(\omega\)</span> amplia a contribuição do pedigree (A<sub>22</sub>) em 30% (1 - <span class="math inline">\(\omega\)</span> = 1 - (-0,3) = 1 + 0,3 = 1,3) na construção da matriz H<sub>22</sub>, atuando como fator de balanceamento para evitar superestimativas. Embora essa configuração seja matematicamente válida e possa ajudar a reduzir a inflação nas predições, conforme demonstrado por <a href="https://doi.org/10.1186/s12711-018-0386-x">Martini et al.&nbsp;(2018)</a>, ela também introduz maior complexidade ao modelo e aumenta o risco de <em>overfitting</em>, especialmente em situações onde há maior incerteza nos dados genômicos.</p>
+<p>Por outro lado, a solução obtida através da <strong>Otimização Bayesiana</strong> oferece um equilíbrio mais conservador entre as fontes de informação. O valor de <span class="math inline">\(\tau\)</span> próximo a 1 mantém a matriz genômica em sua escala original, enquanto <span class="math inline">\(\omega\)</span> = 0,4 resulta em uma redução moderada de 40% da contribuição do pedigree, equivalente a 60% do peso original (1 - <span class="math inline">\(\omega\)</span> = 1 - 0,4 = 0,6). Essa configuração mostra-se mais estável e menos suscetível a problemas de superajuste.</p>
+<p>Considerando o princípio da parcimônia, o equilíbrio entre as fontes de informação e o uso de valores moderados, a combinação obtida pela <strong>Otimização Bayesiana</strong> se mostra como a escolha mais adequada para este caso, reduzindo riscos de superajuste e alinhando-se melhor às implementações do método single-step.</p>
+</section></section></section><section id="estimativas-e-modelos-mistos" class="level1" data-number="4"><h1 data-number="4">
+<span class="header-section-number">4</span> Estimativas e Modelos Mistos</h1>
+<section id="abordagem-single-step" class="level2" data-number="4.1"><h2 data-number="4.1" class="anchored" data-anchor-id="abordagem-single-step">
+<span class="header-section-number">4.1</span> Abordagem Single-Step</h2>
+<p>Nesta etapa, foi realizada uma análise conjunta dos diferentes cortes por meio de modelos mistos, incorporando as matrizes de parentesco (A, G, H). Foram testadas diferentes estruturas de variância-covariância para os efeitos genéticos (id, A, G, H) e para os efeitos residuais (id, diag, un), permitindo avaliar simultaneamente a influência da estrutura genética e da heterogeneidade residual nas estimativas de variância.</p>
+<div class="cell">
+<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Dados</span></span>
+<span><span class="va">map</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html">setNames</a></span><span class="op">(</span><span class="va">genotipos</span><span class="op">$</span><span class="va">id</span>, <span class="va">genotipos</span><span class="op">$</span><span class="va">G</span><span class="op">)</span>  <span class="co"># Cria um vetor de "mapeamento" </span></span>
+<span><span class="va">dat_fen</span><span class="op">$</span><span class="va">geno</span> <span class="op">&lt;-</span> <span class="va">map</span><span class="op">[</span><span class="va">dat_fen</span><span class="op">$</span><span class="va">geno</span><span class="op">]</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">dat_fen</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html">tail</a></span><span class="op">(</span><span class="va">dat_fen</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  corte bloco     geno   tph
+1     1     1 RB721012 18.09
+2     1     2 RB721012 13.50
+3     1     3 RB721012 24.06
+4     1     4 RB721012 14.72
+5     1     1  RB72199 28.42
+6     1     2  RB72199    NA</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    corte bloco      geno   tph
+955     3     3 SP89-1115  5.74
+956     3     4 SP89-1115 13.79
+957     3     1 SP91-1049  7.42
+958     3     2 SP91-1049 10.58
+959     3     3 SP91-1049  5.47
+960     3     4 SP91-1049 20.97</code></pre>
+</div>
+<div class="sourceCode" id="cb85"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">dat_fen</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/transform.html">transform</a></span><span class="op">(</span><span class="va">dat_fen</span>, corte<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, geno<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span><span class="op">(</span><span class="va">geno</span><span class="op">)</span>, bloco<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span><span class="op">(</span><span class="va">bloco</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Modelo base:</strong> <span class="math inline">\(y_{ijk} = \mu + g_i + b_j + c_k + gb_{ij} + gc_{ik} + e_{ijk}\)</span></p>
+<div class="cell">
+<div class="sourceCode" id="cb86"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">modelo_base</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">geno</span> <span class="op">+</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb87"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">modelo_base</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                     VarComp VarCompSE    Zratio Constraint
+geno:bloco.tph-tph  9.008278  2.131289  4.226682   Positive
+geno:corte.tph-tph  8.961850  2.148393  4.171420   Positive
+u:units.tph-tph    36.519936  2.394428 15.252051   Positive</code></pre>
+</div>
+</div>
+<p>Após ajustar o modelo base, foi substituído o efeito aleatório simples de <strong>Geno</strong> pelas matrizes de parentesco (<strong>A</strong>, <strong>G</strong> e <strong>H</strong>). Além disso, testaram-se diferentes estruturas VCOV para <strong>Corte</strong> e <strong>Geno:</strong></p>
+<ul>
+<li><p>Efeito de genótipos modelado pela matriz A -&gt; <strong>random = ~ vsr(Geno, Gu = A)</strong></p></li>
+<li><p>Efeito de genótipos modelado pela matriz G -&gt; <strong>random = ~ vsr(Geno, Gu = G)</strong></p></li>
+<li><p>Efeito de genótipos modelado pela matriz H -&gt; <strong>random = ~ vsr(Geno, Gu = H)</strong></p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode" id="cb89"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">A</span> <span class="op">&lt;-</span> <span class="va">matriz_A2</span>    <span class="co"># 80x80</span></span>
+<span><span class="va">G</span> <span class="op">&lt;-</span> <span class="va">matriz_G2</span>    <span class="co"># 80x80     </span></span>
+<span><span class="va">H</span> <span class="op">&lt;-</span> <span class="va">matriz_H2</span>    <span class="co"># 80x80  -&gt; matriz H do método Otimização Bayesiana</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="teste-de-modelos-e-estruturas-vcov" class="level3" data-number="4.1.1"><h3 data-number="4.1.1" class="anchored" data-anchor-id="teste-de-modelos-e-estruturas-vcov">
+<span class="header-section-number">4.1.1</span> Teste de modelos e estruturas VCOV</h3>
+<div class="cell">
+<div class="sourceCode" id="cb90"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># G = id, R = id  (genótipos com variâncias iguais; resíduos com variâncias iguais)</span></span>
+<span><span class="va">mm1</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">isc</span><span class="op">(</span><span class="va">geno</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = A, R = id  (genótipos modelados pela matriz A; resíduos com variâncias iguais)</span></span>
+<span><span class="va">mm2</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">A</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = G, R = id  (genótipos modelados pela matriz G; resíduos com variâncias iguais)</span></span>
+<span><span class="va">mm3</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">G</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = H, R = id  (genótipos modelados pela matriz H; resíduos com variâncias iguais)</span></span>
+<span><span class="va">mm4</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">H</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = id, R = diag  (genótipos com variâncias iguais; resíduos com variâncias diferentes)</span></span>
+<span><span class="va">mm5</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">isc</span><span class="op">(</span><span class="va">geno</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">dsr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = A, R = diag  (genótipos modelados pela matriz A; resíduos com variâncias diferentes)</span></span>
+<span><span class="va">mm6</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">A</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">dsr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = G, R = diag  (genótipos modelados pela matriz G; resíduos com variâncias diferentes)</span></span>
+<span><span class="va">mm7</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">G</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">dsr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = H, R = diag  (genótipos modelados pela matriz H; resíduos com variâncias diferentes)</span></span>
+<span><span class="va">mm8</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">H</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">dsr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = id, R = un  (genótipos com variâncias iguais; resíduos com variâncias e covariâncias diferentes)</span></span>
+<span><span class="va">mm9</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">isc</span><span class="op">(</span><span class="va">geno</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">usr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = A, R = un  (genótipos modelados pela matriz A; resíduos com variâncias e covariâncias diferentes)</span></span>
+<span><span class="va">mm10</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">A</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">usr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = G, R = un  (genótipos modelados pela matriz G; resíduos com variâncias e covariâncias diferentes)</span></span>
+<span><span class="va">mm11</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">G</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">usr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># G = H, R = un  (genótipos modelados pela matriz H; resíduos com variâncias e covariâncias diferentes)</span></span>
+<span><span class="va">mm12</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">corte</span>, random <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">geno</span>, Gu <span class="op">=</span> <span class="va">H</span><span class="op">)</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span><span class="op">:</span><span class="va">corte</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="fu">usr</span><span class="op">(</span><span class="va">corte</span><span class="op">)</span>, <span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">dat_fen</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb91"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Variâncias Genéticas -&gt; (u:geno.tph-tph)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm1</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = id ; R = id</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm2</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = A  ; R = id </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm3</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = G  ; R = id </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm4</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = H  ; R = id</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm5</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = id ; R = diag</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm6</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = A  ; R = diag </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm7</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = G  ; R = diag </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm8</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = H  ; R = diag </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm9</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>     <span class="co"># G = id ; R = un</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm10</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>    <span class="co"># G = A  ; R = un</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm11</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>    <span class="co"># G = G  ; R = un</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm12</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>    <span class="co"># G = H  ; R = un</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Os resultados demonstraram que a matriz híbrida (H) proporcionou um <strong>aumento significativo na estimativa da variância genética</strong> em comparação com as matrizes A e G, <strong>independentemente da estrutura de variância residual adotada</strong>. Isso indica que a integração de informações de pedigree com dados moleculares (SSR) permite capturar uma parcela maior da variabilidade genética. Em contraste, a matriz de pedigree (A) isoladamente apresentou a menor capacidade de explicação da variação genética entre os genótipos avaliados.</p>
+<div class="callout callout-style-simple callout-important no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Os valores entre parênteses correspondem ao erro padrão (VarCompSE).</p>
+</div>
+</div>
+</div>
+<p><strong>Para R = id</strong></p>
+<table class="caption-top table">
+<thead><tr class="header">
+<th>Fonte de Variação</th>
+<th>G=A</th>
+<th>G=G</th>
+<th>G=H</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Genótipo</td>
+<td>41.97 (8.64)</td>
+<td>101.79 (21.08)</td>
+<td>121.101 (25.00)</td>
+</tr>
+<tr class="even">
+<td>Genótipo:Bloco</td>
+<td>9.19 (2.14)</td>
+<td>8.98 (2.12)</td>
+<td>8.97 (2.12)</td>
+</tr>
+<tr class="odd">
+<td>Genótipo:Corte</td>
+<td>9.23 (2.16)</td>
+<td>8.97 (2.14)</td>
+<td>8.95 (2.14)</td>
+</tr>
+<tr class="even">
+<td>Resíduo</td>
+<td>36.44 (2.38)</td>
+<td>36.51 (2.39)</td>
+<td>36.52 (2.39)</td>
+</tr>
+</tbody>
+</table>
+<p>Quando considerada uma estrutura residual homogênea, observou-se que a matriz H proporcionou a maior estimativa de variância genética entre os genótipos (121.10), seguida pela matriz G (101.79) e, por último, pela matriz A (41.98). Esses resultados indicam que a matriz H, ao integrar informações de pedigree e marcadores moleculares, permite capturar uma porção mais ampla da variabilidade genética. A variância residual permaneceu praticamente constante entre os modelos (~36.5), o que reforça que as diferenças observadas nas variâncias genéticas são atribuídas à matriz de parentesco utilizada.</p>
+<p><strong>Para R = Diag</strong></p>
+<table class="caption-top table">
+<thead><tr class="header">
+<th>Fonte de Variação</th>
+<th>G=A</th>
+<th>G=G</th>
+<th>G=H</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Genótipo</td>
+<td>37.46 (7.84)</td>
+<td>90.69 (19.10)</td>
+<td>107.99 (22.67)</td>
+</tr>
+<tr class="even">
+<td>Genótipo:Bloco</td>
+<td>7.55 (1.96)</td>
+<td>7.35 (1.94)</td>
+<td>7.34 (1.94)</td>
+</tr>
+<tr class="odd">
+<td>Genótipo:Corte</td>
+<td>9.36 (2.18)</td>
+<td>9.06 (2.15)</td>
+<td>9.05 (2.15)</td>
+</tr>
+<tr class="even">
+<td>Resíduo-Corte1</td>
+<td>47.43 (4.84)</td>
+<td>47.47 (4.83)</td>
+<td>47.45 (4.83)</td>
+</tr>
+<tr class="odd">
+<td>Resíduo-Corte2</td>
+<td>43.65 (4.48)</td>
+<td>43.87 (4.49)</td>
+<td>43.87 (4.49)</td>
+</tr>
+<tr class="even">
+<td>Resíduo-Corte3</td>
+<td>22.95 (2.84)</td>
+<td>23.00 (2.84)</td>
+<td>23.02 (2.84)</td>
+</tr>
+</tbody>
+</table>
+<p>Ao permitir heterogeneidade entre os cortes, os modelos continuaram apresentando o mesmo padrão quanto à variância genética: H (107.99) &gt; G (90.70) &gt; A (37.47). A modelagem da estrutura residual com variâncias específicas por corte não alterou significativamente o comportamento dos componentes genéticos, mas permitiu observar variações residuais entre os cortes, com valores maiores nos dois primeiros cortes (~47 e ~44) e menores no terceiro (~23). Isso sugere que os dois primeiros cortes apresentaram maior variabilidade não explicada, possivelmente associada a condições ambientais menos estáveis ou a menor precisão nas medições iniciais.</p>
+<p><strong>Para R = un</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 22%">
+</colgroup>
+<thead><tr class="header">
+<th>Fonte de Variação</th>
+<th>G=A</th>
+<th>G=G</th>
+<th>G=H</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Genótipo</td>
+<td>37.46 (7.84)</td>
+<td>90.69 (1.91)</td>
+<td>107.99 (2.26)</td>
+</tr>
+<tr class="even">
+<td>Genótipo:Bloco</td>
+<td>7.55 (1.96)</td>
+<td>7.35 (1.94)</td>
+<td>7.34 (1.94)</td>
+</tr>
+<tr class="odd">
+<td>Genótipo:Corte</td>
+<td>9.36 (2.18)</td>
+<td>9.06 (2.15)</td>
+<td>9.05 (2.15)</td>
+</tr>
+<tr class="even">
+<td>Resíduo-Corte1</td>
+<td>47.43 (4.84)</td>
+<td>47.47 (4.83)</td>
+<td>47.45 (4.83)</td>
+</tr>
+<tr class="odd">
+<td>Covariância-Corte 2:1</td>
+<td>21.09 (1.88)</td>
+<td>21.98 (7.04)</td>
+<td>22.22 (1.19)</td>
+</tr>
+<tr class="even">
+<td>Resíduo-Corte2</td>
+<td>43.65 (4.48)</td>
+<td>43.87 (4.49)</td>
+<td>43.87 (4.49)</td>
+</tr>
+<tr class="odd">
+<td>Covariância-Corte 3:1</td>
+<td>21.09 (00.00)</td>
+<td>21.98 (00.00)</td>
+<td>22.22 (00.00)</td>
+</tr>
+<tr class="even">
+<td>Covariância-Corte 3:2</td>
+<td>21.09 (00.00)</td>
+<td>21.98 (00.00)</td>
+<td>22.22 (00.00)</td>
+</tr>
+<tr class="odd">
+<td>Resíduo-Corte3</td>
+<td>22.95 (2.84)</td>
+<td>23.00 (2.84)</td>
+<td>23.02 (2.84)</td>
+</tr>
+</tbody>
+</table>
+<p>Com a introdução de uma estrutura residual não estruturada, que considera não apenas variâncias diferentes entre os cortes, mas também suas covariâncias, o padrão de variância genética permaneceu consistente: H (107.99) &gt; G (90.70) &gt; A (37.47). As estimativas de covariância entre os cortes foram iguais (~22), com erro padrão igual a zero. Isso sugere que essas covariâncias podem não ser estatisticamente significativas, ou que o modelo não conseguiu estimar a incerteza dessas covariâncias. A matriz H seguiu destacando-se por capturar maior proporção da variabilidade genética, mesmo com o aumento da complexidade no componente residual. Isso evidencia que a matriz híbrida é informativa mesmo em cenários mais realistas e complexos de modelagem.</p>
+</section><section id="tabela-de-comparação-de-modelos" class="level3" data-number="4.1.2"><h3 data-number="4.1.2" class="anchored" data-anchor-id="tabela-de-comparação-de-modelos">
+<span class="header-section-number">4.1.2</span> Tabela de comparação de modelos</h3>
+<div class="cell">
+<div class="sourceCode" id="cb92"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Lista de modelos ajustados</span></span>
+<span><span class="va">modelos</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">mm1</span>, <span class="va">mm2</span>, <span class="va">mm3</span>, <span class="va">mm4</span>, <span class="va">mm5</span>, <span class="va">mm6</span>, <span class="va">mm7</span>, <span class="va">mm8</span>, <span class="va">mm9</span>, <span class="va">mm10</span>, <span class="va">mm11</span>, <span class="va">mm12</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Nomes dos modelos (estruturas VCOVs e Matrizes)</span></span>
+<span><span class="va">nomes_modelos</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"R=id, G=id"</span>, <span class="st">"R=id, G=A"</span>, <span class="st">"R=id, G=G"</span>, <span class="st">"R=id, G=H"</span>,</span>
+<span>  <span class="st">"R=diag, G=id"</span>, <span class="st">"R=diag, G=A"</span>, <span class="st">"R=diag, G=G"</span>, <span class="st">"R=diag, G=H"</span>,</span>
+<span>  <span class="st">"R=un, G=id"</span>, <span class="st">"R=un, G=A"</span>, <span class="st">"R=un, G=G"</span>, <span class="st">"R=un, G=H"</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb93"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Extrair AIC e BIC de cada modelo</span></span>
+<span><span class="va">AIC_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="va">modelos</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">AIC</span><span class="op">)</span>  </span>
+<span><span class="va">BIC_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="va">modelos</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">BIC</span><span class="op">)</span>  </span>
+<span></span>
+<span><span class="co"># Criar a tabela de comparação</span></span>
+<span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span></span>
+<span>  Modelo <span class="op">=</span> <span class="va">nomes_modelos</span>,</span>
+<span>  AIC <span class="op">=</span> <span class="va">AIC_values</span>,</span>
+<span>  BIC <span class="op">=</span> <span class="va">BIC_values</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Criar a tabela simples com kable</span></span>
+<span><span class="op">(</span><span class="va">tabela</span> <span class="op">&lt;-</span> <span class="fu">kable</span><span class="op">(</span><span class="va">comparison</span>, align <span class="op">=</span> <span class="st">"c"</span>, caption <span class="op">=</span> <span class="st">"Comparação de Modelos (AIC e BIC)"</span><span class="op">)</span><span class="op">)</span>   <span class="co"># small is better</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Comparação de Modelos (AIC e BIC)</caption>
+<thead><tr class="header">
+<th style="text-align: center;">Modelo</th>
+<th style="text-align: center;">AIC</th>
+<th style="text-align: center;">BIC</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">R=id, G=id</td>
+<td style="text-align: center;">-20.82860</td>
+<td style="text-align: center;">8.2530538</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">R=id, G=A</td>
+<td style="text-align: center;">-22.47180</td>
+<td style="text-align: center;">6.6098611</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">R=id, G=G</td>
+<td style="text-align: center;">-28.97385</td>
+<td style="text-align: center;">0.1078114</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">R=id, G=H</td>
+<td style="text-align: center;">-29.99117</td>
+<td style="text-align: center;">-0.9095070</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">R=diag, G=id</td>
+<td style="text-align: center;">-43.52790</td>
+<td style="text-align: center;">-14.4462432</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">R=diag, G=A</td>
+<td style="text-align: center;">-43.92598</td>
+<td style="text-align: center;">-14.8443163</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">R=diag, G=G</td>
+<td style="text-align: center;">-50.65313</td>
+<td style="text-align: center;">-21.5714712</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">R=diag, G=H</td>
+<td style="text-align: center;">-51.60011</td>
+<td style="text-align: center;">-22.5184486</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">R=un, G=id</td>
+<td style="text-align: center;">-43.52790</td>
+<td style="text-align: center;">-14.4462432</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">R=un, G=A</td>
+<td style="text-align: center;">-43.92598</td>
+<td style="text-align: center;">-14.8443163</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">R=un, G=G</td>
+<td style="text-align: center;">-50.65313</td>
+<td style="text-align: center;">-21.5714712</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">R=un, G=H</td>
+<td style="text-align: center;">-51.60011</td>
+<td style="text-align: center;">-22.5184486</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb95"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># R=diag, G=A   equivalentes com   R=un, G=A </span></span>
+<span><span class="co"># R=diag, G=G   equivalentes com   R=un, G=G  </span></span>
+<span><span class="co"># R=diag, G=H   equivalentes com   R=un, G=H</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Com base nos critérios de informação AIC e BIC, os modelos que utilizam a matriz H para o efeito genético e a estrutura diagonal (diag) para os resíduos apresentaram o melhor ajuste aos dados. Observa-se que os modelos com R = diag são equivalentes aos respectivos modelos com R = un, sugerindo que o uso de uma estrutura mais simples para os resíduos (diag) é suficiente para capturar a variabilidade, sem perda de qualidade no ajuste.</p>
+<p>Seguindo o princípio da parcimônia, opta-se por modelos com <strong>R = diag</strong>, que são mais simples e computacionalmente eficientes. A matriz H destacou-se como a mais informativa para modelar os efeitos genéticos, reforçando a vantagem da combinação entre pedigree e marcadores moleculares.</p>
+</section></section><section id="abordagem-two-step" class="level2" data-number="4.2"><h2 data-number="4.2" class="anchored" data-anchor-id="abordagem-two-step">
+<span class="header-section-number">4.2</span> Abordagem Two-Step</h2>
+<p>Nesta etapa, a análise foi conduzida em dois passos. No <strong>primeiro passo</strong>, cada corte (ano) foi analisado separadamente por meio de um modelo com efeitos fixos para blocos e genótipos. O objetivo dessa etapa foi remover o efeito de blocos e obter médias ajustadas (BLUEs) mais precisas para os genótipos dentro de cada corte, ou seja, médias “limpas” sem resíduo experimental. No <strong>segundo passo</strong>, essas médias ajustadas foram reunidas em uma análise conjunta, com o objetivo de modelar a variação genética entre os genótipos ao longo dos cortes. Para isso, foram utilizadas diferentes matrizes de parentesco (A, G e H), além da inclusão do efeito de corte como fator fixo.</p>
+<div class="callout callout-style-simple callout-note no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Como cada genótipo tem apenas <strong>uma média por corte</strong>, <strong>não há repetições</strong> para a estimativa de uma nova variância residual no segundo passo. Na prática, o componente residual que o modelo misto tentaria estimar já foi, em grande parte, absorvido no primeiro passo da análise.</p>
+</div>
+</div>
+</div>
+<p><strong>Solução:</strong> fixar a matriz de variância residual (R) no segundo passo, utilizando os valores de variância residual estimados individualmente para cada corte no primeiro passo. Essa estratégia visa preservar a heterogeneidade residual entre os cortes, mesmo sem repetições por genótipo.</p>
+<div class="cell">
+<div class="sourceCode" id="cb96"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Filtro cortes</span></span>
+<span><span class="va">c1</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html">subset</a></span><span class="op">(</span><span class="va">dat_fen</span>, <span class="va">corte</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span>; <span class="va">c1</span></span>
+<span><span class="va">c2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html">subset</a></span><span class="op">(</span><span class="va">dat_fen</span>, <span class="va">corte</span> <span class="op">==</span> <span class="fl">2</span><span class="op">)</span>; <span class="va">c2</span></span>
+<span><span class="va">c3</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html">subset</a></span><span class="op">(</span><span class="va">dat_fen</span>, <span class="va">corte</span> <span class="op">==</span> <span class="fl">3</span><span class="op">)</span>; <span class="va">c3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Modelo:</strong> <span class="math inline">\(y_{ij} = \mu + g_i + b_j + e_{ij}\)</span></p>
+<div class="cell">
+<div class="sourceCode" id="cb97"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Modelo para cada corte (g e b como efeitos fixos)</span></span>
+<span><span class="va">mm_c1</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">c1</span><span class="op">)</span></span>
+<span><span class="va">mm_c2</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">c2</span><span class="op">)</span></span>
+<span><span class="va">mm_c3</span> <span class="op">&lt;-</span> <span class="fu">mmer</span><span class="op">(</span><span class="va">tph</span> <span class="op">~</span> <span class="va">bloco</span> <span class="op">+</span> <span class="va">geno</span>, rcov <span class="op">=</span> <span class="op">~</span> <span class="fu">vsr</span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">c3</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Variâncias residuais (u:units.tph-tph)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c1</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>       <span class="co"># 51.59916</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c2</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>       <span class="co"># 51.93876</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c3</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span>       <span class="co"># 28.48849</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb99"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Extrair os coeficientes </span></span>
+<span><span class="va">coef_c1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c1</span><span class="op">)</span><span class="op">$</span><span class="va">betas</span></span>
+<span><span class="va">coef_c2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c2</span><span class="op">)</span><span class="op">$</span><span class="va">betas</span>  <span class="co"># Mostra Estimate, Std.Error e t.value</span></span>
+<span><span class="va">coef_c3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c3</span><span class="op">)</span><span class="op">$</span><span class="va">betas</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Extrair apenas as linhas dos genótipos (ignorando intercepto e blocos)</span></span>
+<span><span class="va">n_fixos</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">+</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html">levels</a></span><span class="op">(</span><span class="va">dat_fen</span><span class="op">$</span><span class="va">bloco</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span>  <span class="co"># 1 intercepto + (n_blocos - 1)</span></span>
+<span></span>
+<span><span class="co"># Médias ajustadas dos genótipos</span></span>
+<span><span class="va">med1</span> <span class="op">&lt;-</span> <span class="va">mm_c1</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">[</span><span class="op">(</span><span class="va">n_fixos</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">mm_c1</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">med2</span> <span class="op">&lt;-</span> <span class="va">mm_c2</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">[</span><span class="op">(</span><span class="va">n_fixos</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">mm_c2</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">med3</span> <span class="op">&lt;-</span> <span class="va">mm_c3</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">[</span><span class="op">(</span><span class="va">n_fixos</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">mm_c3</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">)</span><span class="op">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb101"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Obter os níveis dos genótipos</span></span>
+<span><span class="va">nomes_geno</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html">levels</a></span><span class="op">(</span><span class="va">dat_fen</span><span class="op">$</span><span class="va">geno</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Criar o data.frame</span></span>
+<span><span class="va">Blue1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>geno <span class="op">=</span> <span class="va">nomes_geno</span>, tph <span class="op">=</span> <span class="va">mm_c1</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">nomes_geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>   <span class="co"># Corte 1</span></span>
+<span><span class="va">Blue2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>geno <span class="op">=</span> <span class="va">nomes_geno</span>, tph <span class="op">=</span> <span class="va">mm_c2</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">nomes_geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>   <span class="co"># Corte 2</span></span>
+<span><span class="va">Blue3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>geno <span class="op">=</span> <span class="va">nomes_geno</span>, tph <span class="op">=</span> <span class="va">mm_c3</span><span class="op">$</span><span class="va">Beta</span><span class="op">$</span><span class="va">Estimate</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">nomes_geno</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>   <span class="co"># Corte 3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Combinar todas as médias ajustadas</span></span>
+<span><span class="va">Blues</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">Blue1</span>, corte <span class="op">=</span> <span class="st">"1"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">Blue2</span>, corte <span class="op">=</span> <span class="st">"2"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">Blue3</span>, corte <span class="op">=</span> <span class="st">"3"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">nrow</a></span><span class="op">(</span><span class="va">Blues</span><span class="op">)</span>  <span class="co"># 80 genótipos × 3 cortes = 240 linhas</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb103"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Extrair variâncias residuais de cada corte </span></span>
+<span><span class="va">var_resid_c1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c1</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span><span class="op">[</span><span class="st">"u:units.tph-tph"</span>, <span class="st">"VarComp"</span><span class="op">]</span></span>
+<span><span class="va">var_resid_c2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c2</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span><span class="op">[</span><span class="st">"u:units.tph-tph"</span>, <span class="st">"VarComp"</span><span class="op">]</span></span>
+<span><span class="va">var_resid_c3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">mm_c3</span><span class="op">)</span><span class="op">$</span><span class="va">varcomp</span><span class="op">[</span><span class="st">"u:units.tph-tph"</span>, <span class="st">"VarComp"</span><span class="op">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Garantir que corte seja fator</span></span>
+<span><span class="va">Blues</span><span class="op">$</span><span class="va">corte</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html">as.factor</a></span><span class="op">(</span><span class="va">Blues</span><span class="op">$</span><span class="va">corte</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Adicionar variâncias residuais ao data.frame Blues</span></span>
+<span><span class="va">Blues</span><span class="op">$</span><span class="va">residual_var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html">ifelse</a></span><span class="op">(</span></span>
+<span>  <span class="va">Blues</span><span class="op">$</span><span class="va">corte</span> <span class="op">==</span> <span class="st">"1"</span>, <span class="va">var_resid_c1</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html">ifelse</a></span><span class="op">(</span><span class="va">Blues</span><span class="op">$</span><span class="va">corte</span> <span class="op">==</span> <span class="st">"2"</span>, <span class="va">var_resid_c2</span>, <span class="va">var_resid_c3</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Número de observações por corte</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html">table</a></span><span class="op">(</span><span class="va">Blues</span><span class="op">$</span><span class="va">corte</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Cria uma matriz diagonal onde cada elemento é a variância residual do respectivo corte</span></span>
+<span><span class="va">R_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/diag.html">diag</a></span><span class="op">(</span><span class="va">Blues</span><span class="op">$</span><span class="va">residual_var</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html">dim</a></span><span class="op">(</span><span class="va">R_matrix</span><span class="op">)</span>  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb105"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Assume uma única variância residual para todas as observações</span></span>
+<span><span class="co"># mmA1 &lt;- mmer(tph ~ corte, random = ~ vsr(geno, Gu = A), rcov = ?, data = Blues)</span></span>
+<span><span class="co"># mmG1 &lt;- mmer(tph ~ corte, random = ~ vsr(geno, Gu = G), rcov = ?, data = Blues)</span></span>
+<span><span class="co"># mmH1 &lt;- mmer(tph ~ corte, random = ~ vsr(geno, Gu = H), rcov = ?, data = Blues)</span></span>
+<span></span>
+<span><span class="co"># summary(mmA1)$varcomp</span></span>
+<span><span class="co"># summary(mmG1)$varcomp  </span></span>
+<span><span class="co"># summary(mmH1)$varcomp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Apesar de <strong>diversas tentativas</strong> utilizando todas as estratégias disponíveis no pacote <code>sommer</code>, não foi possível fixar diretamente a matriz R com variâncias residuais previamente estimadas. Foram testadas diferentes abordagens, incluindo a especificação de estruturas e argumentos por meio do parâmetro <code>rcov</code>, mas nenhuma resultou na execução bem-sucedida do modelo. Essa limitação parece estar relacionada à própria implementação do <code>sommer</code>, que, até o momento, <strong>não oferece suporte para a fixação</strong> da matriz R com valores definidos pelo usuário, pelo menos não na forma que seria necessária para este tipo de análise Two-Step.</p>
+<div class="callout callout-style-simple callout-caution no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Possível solução:</strong> ASReml-R</p>
+</div>
+</div>
+</div>
+</section></section><section id="referências" class="level1" data-number="5"><h1 data-number="5">
+<span class="header-section-number">5</span> Referências</h1>
+<p>AMADEU, Rodrigo R. et al.&nbsp;AGHmatrix: genetic relationship matrices in R. <strong>Bioinformatics</strong>, v. 39, n.&nbsp;7, p.&nbsp;btad445, 2023.</p>
+<p>ENDELMAN, Jeffrey B. et al.&nbsp;Genetic variance partitioning and genome-wide prediction with allele dosage information in autotetraploid potato.&nbsp;<strong>Genetics</strong>, v. 209, n.&nbsp;1, p.&nbsp;77-87, 2018.</p>
+<p>MARTINI, Johannes WR et al.&nbsp;The effect of the H<sup>-1</sup> scaling factors τ and ω on the structure of H in the single-step procedure. <strong>Genetics Selection Evolution</strong>, v. 50, n.&nbsp;1, p.&nbsp;16, 2018.</p>
+<p>OLIVEIRA, Gleicy Kelly et al.&nbsp;Meiotic abnormalities in sugarcane (Saccharum spp.) and parental species: evidence for peri‐and paracentric inversions. <strong>Annals of applied biology</strong>, v. 183, n.&nbsp;3, p.&nbsp;271-286, 2023.</p>
+<p>VANRADEN, Paul M. Efficient methods to compute genomic predictions. <strong>Journal of dairy science</strong>, v. 91, n.&nbsp;11, p.&nbsp;4414-4423, 2008.</p>
+</section></main><!-- /main column --><script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
